@@ -14,6 +14,7 @@ export function UploadMarks() {
   const [academicYear, setAcademicYear] = useState("");
   const [uploadStatus, setUploadStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -23,24 +24,72 @@ export function UploadMarks() {
 
   const handleUpload = () => {
     if (!selectedFile || !examType || !academicYear) {
+      setErrorMessage("Please ensure all fields (Exam Type, Academic Year, and File) are filled.");
+      setUploadStatus("error");
+      return;
+    }
+
+    const gasUrl = import.meta.env.VITE_GAS_WEB_APP_URL;
+
+    if (!gasUrl || gasUrl === 'YOUR_URL_HERE') {
+      setErrorMessage("Please configure VITE_GAS_WEB_APP_URL in your .env file before uploading.");
       setUploadStatus("error");
       return;
     }
 
     setUploadStatus("processing");
-    setUploadProgress(0);
-
-    // Simulate file processing
+    setErrorMessage("");
+    // Start a fake progress while the file uploads
+    let progress = 0;
     const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => setUploadStatus("success"), 500);
-          return 100;
-        }
-        return prev + 10;
-      });
+      progress += 5;
+      if (progress > 90) progress = 90; // cap at 90% until done
+      setUploadProgress(progress);
     }, 200);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64Data = (reader.result as string).split(',')[1];
+        
+        const payload = {
+          filename: selectedFile.name,
+          mimeType: selectedFile.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          base64: base64Data,
+          examType,
+          academicYear
+        };
+
+        const response = await fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: JSON.stringify(payload),
+        });
+
+        clearInterval(interval);
+        
+        if (response.type === 'opaque' || response.ok) {
+           setUploadProgress(100);
+           setUploadStatus("success");
+        } else {
+           setErrorMessage("Upload request failed or was rejected by Google Apps Script.");
+           setUploadStatus("error");
+        }
+      } catch (error: any) {
+        clearInterval(interval);
+        console.error("Upload failed", error);
+        setErrorMessage(error.message || "Failed to connect to Google Apps Script. Check network or CORS.");
+        setUploadStatus("error");
+      }
+    };
+    reader.onerror = () => {
+       clearInterval(interval);
+       setErrorMessage("Failed to read the selected file.");
+       setUploadStatus("error");
+    };
+    
+    // Read the file as a data URL (base64)
+    reader.readAsDataURL(selectedFile);
   };
 
   return (
@@ -230,7 +279,7 @@ export function UploadMarks() {
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertTitle className="text-red-800">Upload Failed</AlertTitle>
                 <AlertDescription className="text-red-700">
-                  Please ensure all fields are filled and a valid Excel file is selected.
+                  {errorMessage || "Please ensure all fields are filled and a valid Excel file is selected."}
                 </AlertDescription>
               </Alert>
             )}
