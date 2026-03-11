@@ -15,6 +15,7 @@ export function UploadMarks() {
   const [uploadStatus, setUploadStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
+  const [generatedFileUrl, setGeneratedFileUrl] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -62,17 +63,24 @@ export function UploadMarks() {
 
         const response = await fetch(gasUrl, {
           method: 'POST',
-          mode: 'no-cors',
           body: JSON.stringify(payload),
         });
 
         clearInterval(interval);
         
-        if (response.type === 'opaque' || response.ok) {
-           setUploadProgress(100);
-           setUploadStatus("success");
+        if (response.ok) {
+           const jsonResponse = await response.json();
+           
+           if (jsonResponse.status === 'success') {
+             setGeneratedFileUrl(jsonResponse.fileUrl || "");
+             setUploadProgress(100);
+             setUploadStatus("success");
+           } else {
+             setErrorMessage(jsonResponse.message || "Apps script reported an internal error.");
+             setUploadStatus("error");
+           }
         } else {
-           setErrorMessage("Upload request failed or was rejected by Google Apps Script.");
+           setErrorMessage(`Upload request failed with status: ${response.status}`);
            setUploadStatus("error");
         }
       } catch (error: any) {
@@ -190,118 +198,158 @@ export function UploadMarks() {
           </Card>
         </div>
 
-        {/* Upload Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Marks File</CardTitle>
-            <CardDescription>Select exam details and upload the Excel file</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Exam Type Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="exam-type">Exam Type</Label>
-              <Select value={examType} onValueChange={setExamType}>
-                <SelectTrigger id="exam-type">
-                  <SelectValue placeholder="Select exam type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unit-test-1">Unit Test 1</SelectItem>
-                  <SelectItem value="unit-test-2">Unit Test 2</SelectItem>
-                  <SelectItem value="cie-1">CIE 1</SelectItem>
-                  <SelectItem value="cie-2">CIE 2</SelectItem>
-                  <SelectItem value="cie-3">CIE 3</SelectItem>
-                  <SelectItem value="term-work">Term Work</SelectItem>
-                  <SelectItem value="end-sem">End Semester</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Academic Year Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="academic-year">Academic Year</Label>
-              <Select value={academicYear} onValueChange={setAcademicYear}>
-                <SelectTrigger id="academic-year">
-                  <SelectValue placeholder="Select academic year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FY">First Year (FY)</SelectItem>
-                  <SelectItem value="SY">Second Year (SY)</SelectItem>
-                  <SelectItem value="TE">Third Year (TE)</SelectItem>
-                  <SelectItem value="BE">Final Year (BE)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* File Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="file-upload">Excel File</Label>
-              <div className="flex items-center gap-4">
-                <input
-                  id="file-upload"
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileChange}
-                  className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-              </div>
-              {selectedFile && (
-                <p className="text-sm text-gray-600">
-                  Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                </p>
-              )}
-            </div>
-
-            {/* Upload Progress */}
-            {uploadStatus === "processing" && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Processing file...</span>
-                  <span>{uploadProgress}%</span>
+        {/* Upload Form or Success View */}
+        {uploadStatus === "success" ? (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+                <div>
+                  <CardTitle>Processing Complete!</CardTitle>
+                  <CardDescription>Marks have been successfully analyzed and saved.</CardDescription>
                 </div>
-                <Progress value={uploadProgress} />
               </div>
-            )}
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-green-50 text-green-800 p-4 rounded-lg">
+                <p className="text-sm font-medium">Next Steps Available:</p>
+                <p className="text-sm mt-1">
+                  You can now safely view the Google Sheet, explore the interactive analytics dashboard, or proceed to manage report cards.
+                </p>
+              </div>
 
-            {/* Status Alerts */}
-            {uploadStatus === "success" && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertTitle className="text-green-800">Upload Successful!</AlertTitle>
-                <AlertDescription className="text-green-700">
-                  Marks have been processed successfully. Report cards are being generated and will be
-                  emailed to students shortly.
-                </AlertDescription>
-              </Alert>
-            )}
+              <div className="flex flex-col sm:flex-row gap-4">
+                {generatedFileUrl && (
+                  <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => window.open(generatedFileUrl, "_blank")}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Open Analysis Sheet
+                  </Button>
+                )}
+                <Link to="/analytics" className="flex-1">
+                  <Button variant="outline" className="w-full border-purple-200 hover:bg-purple-50 hover:text-purple-700">
+                    <AlertCircle className="mr-2 h-4 w-4" /> {/* Replacing BarChart placeholder */}
+                    View Analytics
+                  </Button>
+                </Link>
+                <Link to="/reports" className="flex-1">
+                  <Button variant="outline" className="w-full border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> {/* Replacing FileText placeholder */}
+                    Manage Reports
+                  </Button>
+                </Link>
+              </div>
 
-            {uploadStatus === "error" && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertTitle className="text-red-800">Upload Failed</AlertTitle>
-                <AlertDescription className="text-red-700">
-                  {errorMessage || "Please ensure all fields are filled and a valid Excel file is selected."}
-                </AlertDescription>
-              </Alert>
-            )}
+              <div className="pt-4 border-t">
+                 <Button variant="ghost" onClick={() => {
+                   setUploadStatus("idle");
+                   setSelectedFile(null);
+                 }} className="w-full text-gray-500">
+                   Upload Another File
+                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload Marks File</CardTitle>
+              <CardDescription>Select exam details and upload the Excel file</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Exam Type Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="exam-type">Exam Type</Label>
+                <Select value={examType} onValueChange={setExamType}>
+                  <SelectTrigger id="exam-type">
+                    <SelectValue placeholder="Select exam type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unit-test-1">Unit Test 1</SelectItem>
+                    <SelectItem value="unit-test-2">Unit Test 2</SelectItem>
+                    <SelectItem value="cie-1">CIE 1</SelectItem>
+                    <SelectItem value="cie-2">CIE 2</SelectItem>
+                    <SelectItem value="cie-3">CIE 3</SelectItem>
+                    <SelectItem value="term-work">Term Work</SelectItem>
+                    <SelectItem value="end-sem">End Semester</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <Button
-                onClick={handleUpload}
-                disabled={!selectedFile || !examType || !academicYear || uploadStatus === "processing"}
-                className="flex-1"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Upload and Process
-              </Button>
-              <Link to="/faculty" className="flex-1">
-                <Button variant="outline" className="w-full">
-                  Cancel
+              {/* Academic Year Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="academic-year">Academic Year</Label>
+                <Select value={academicYear} onValueChange={setAcademicYear}>
+                  <SelectTrigger id="academic-year">
+                    <SelectValue placeholder="Select academic year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FY">First Year (FY)</SelectItem>
+                    <SelectItem value="SY">Second Year (SY)</SelectItem>
+                    <SelectItem value="TE">Third Year (TE)</SelectItem>
+                    <SelectItem value="BE">Final Year (BE)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="file-upload">Excel File</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileChange}
+                    className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </div>
+                {selectedFile && (
+                  <p className="text-sm text-gray-600">
+                    Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                  </p>
+                )}
+              </div>
+
+              {/* Upload Progress */}
+              {uploadStatus === "processing" && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Processing file...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <Progress value={uploadProgress} />
+                </div>
+              )}
+
+              {uploadStatus === "error" && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertTitle className="text-red-800">Upload Failed</AlertTitle>
+                  <AlertDescription className="text-red-700">
+                    {errorMessage || "Please ensure all fields are filled and a valid Excel file is selected."}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleUpload}
+                  disabled={!selectedFile || !examType || !academicYear || uploadStatus === "processing"}
+                  className="flex-1"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload and Process
                 </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+                <Link to="/faculty" className="flex-1">
+                  <Button variant="outline" className="w-full">
+                    Cancel
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Processing Info */}
         <Card className="mt-6">
