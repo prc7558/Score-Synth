@@ -1,3 +1,4 @@
+import { ModeToggle } from "../components/mode-toggle";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router";
 import { ArrowLeft, Download, Mail, Search, AlertCircle, Loader2 } from "lucide-react";
@@ -199,11 +200,11 @@ export function ReportCards() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted/30 dark:bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto" />
           <h2 className="text-xl font-semibold text-gray-700">Loading Student Reports...</h2>
-          <p className="text-gray-500">Fetching live data from Google Sheets.</p>
+          <p className="text-muted-foreground">Fetching live data from Google Sheets.</p>
         </div>
       </div>
     );
@@ -211,11 +212,11 @@ export function ReportCards() {
 
   if (error || reportData.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-muted/30 dark:bg-background p-8">
         <Link to="/faculty" className="mb-6 inline-block">
           <Button variant="ghost"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
         </Link>
-        <Alert variant="destructive" className="max-w-2xl mx-auto mt-12 bg-white">
+        <Alert variant="destructive" className="max-w-2xl mx-auto mt-12 bg-card">
           <AlertCircle className="h-5 w-5" />
           <AlertTitle>Error Loading Reports</AlertTitle>
           <AlertDescription>{error || "No student data found."}</AlertDescription>
@@ -225,10 +226,10 @@ export function ReportCards() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30 dark:bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-card shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to="/faculty">
@@ -237,10 +238,11 @@ export function ReportCards() {
                 </Button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Report Cards</h1>
-                <p className="text-sm text-gray-600">Generate and distribute student reports directly via Google Sheets</p>
+                <h1 className="text-2xl font-bold text-foreground">Report Cards</h1>
+                <p className="text-sm text-muted-foreground">Generate and distribute student reports directly via Google Sheets</p>
               </div>
             </div>
+          <ModeToggle />
           </div>
         </div>
       </header>
@@ -255,11 +257,11 @@ export function ReportCards() {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Exam Type:</span>
+                  <span className="text-muted-foreground">Exam Type:</span>
                   <span className="font-semibold">{examTypeInfo}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Students:</span>
+                  <span className="text-muted-foreground">Total Students:</span>
                   <span className="font-semibold">{reportData.length}</span>
                 </div>
               </div>
@@ -276,7 +278,7 @@ export function ReportCards() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 Download all visual report cards (Coming Soon)
               </p>
               <Button className="w-full" variant="outline" disabled>
@@ -296,7 +298,7 @@ export function ReportCards() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 Send report cards to all students via automated GAS emails
               </p>
               <Button className="w-full" variant="outline" disabled={sendingEmail}>
@@ -355,10 +357,10 @@ export function ReportCards() {
                       </TableCell>
                       <TableCell>{data.rollNumber}</TableCell>
                       <TableCell className="font-medium">{data.name}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{data.email}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{data.email}</TableCell>
                       <TableCell className="text-right">
                         <span className="font-semibold">{data.totalObtained}</span>
-                        <span className="text-gray-500">/{data.totalMax}</span>
+                        <span className="text-muted-foreground">/{data.totalMax}</span>
                       </TableCell>
                       <TableCell className="text-right font-semibold">{data.percentage}%</TableCell>
                       <TableCell className="text-center">

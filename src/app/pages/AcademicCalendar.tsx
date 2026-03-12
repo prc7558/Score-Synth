@@ -1,3 +1,4 @@
+import { ModeToggle } from "../components/mode-toggle";
 import { Link } from "react-router";
 import { ArrowLeft, Calendar as CalendarIcon, Clock, FileText } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -30,7 +31,7 @@ export function AcademicCalendar() {
       case 'result':
         return 'bg-green-100 text-green-700 border-green-200';
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return 'bg-muted text-gray-700 border-border';
     }
   };
 
@@ -70,10 +71,10 @@ export function AcademicCalendar() {
   const pastEvents = calendarEvents.filter(e => !isUpcoming(e.date));
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30 dark:bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-card shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/student">
               <Button variant="ghost" size="icon">
@@ -81,11 +82,12 @@ export function AcademicCalendar() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Academic Calendar</h1>
-              <p className="text-sm text-gray-600">Exam schedules and important dates</p>
+              <h1 className="text-2xl font-bold text-foreground">Academic Calendar</h1>
+              <p className="text-sm text-muted-foreground">Exam schedules and important dates</p>
             </div>
           </div>
-        </div>
+        <ModeToggle />
+          </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -134,7 +136,7 @@ export function AcademicCalendar() {
             {upcomingEvents.length === 0 ? (
               <div className="text-center py-12">
                 <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No upcoming events scheduled</p>
+                <p className="text-muted-foreground">No upcoming events scheduled</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -175,29 +177,29 @@ export function AcademicCalendar() {
             {pastEvents.length === 0 ? (
               <div className="text-center py-12">
                 <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No past events</p>
+                <p className="text-muted-foreground">No past events</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {pastEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-start gap-4 p-4 rounded-lg border bg-gray-50 opacity-75"
+                    className="flex items-start gap-4 p-4 rounded-lg border bg-muted/50 dark:bg-muted/20 opacity-75"
                   >
-                    <div className="p-3 rounded-lg bg-gray-200 text-gray-600">
+                    <div className="p-3 rounded-lg bg-secondary text-muted-foreground">
                       {getEventIcon(event.type)}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h3 className="font-semibold">{event.title}</h3>
-                          <p className="text-sm text-gray-600">{formatDate(event.date)}</p>
+                          <p className="text-sm text-muted-foreground">{formatDate(event.date)}</p>
                         </div>
-                        <Badge variant="outline" className="bg-white">
+                        <Badge variant="outline" className="bg-card">
                           {getEventTypeLabel(event.type)}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600">{event.description}</p>
+                      <p className="text-sm text-muted-foreground">{event.description}</p>
                     </div>
                   </div>
                 ))}
@@ -230,7 +232,7 @@ export function AcademicCalendar() {
                 <span className="text-sm">Results</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-gray-500"></div>
+                <div className="w-4 h-4 rounded bg-muted/50 dark:bg-muted/200"></div>
                 <span className="text-sm">Other</span>
               </div>
             </div>

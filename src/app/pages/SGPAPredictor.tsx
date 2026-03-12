@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Badge } from "../components/ui/badge";
+import { ModeToggle } from "../components/mode-toggle";
 
 const theorySubjects = [
   { id: 'dbms', name: 'Database Management Systems', credits: 3 },
@@ -109,6 +110,21 @@ export function SGPAPredictor() {
     } else {
       setCalculatedCGPA(null);
     }
+
+    // Log to XAMPP formally
+    try {
+      fetch('http://localhost/scoresynth/api.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'log_activity',
+          action_type: 'SGPA_Prediction',
+          details: `Calculated SGPA: ${sgpa.toFixed(2)}`
+        })
+      }).catch(e => console.error("XAMPP log_activity failed:", e));
+    } catch (e) {
+      console.error("XAMPP log_activity error:", e);
+    }
   };
 
   const allMarksEntered = 
@@ -116,19 +132,22 @@ export function SGPAPredictor() {
     practicalSubjects.every(p => practicalMarks[p.id] !== undefined);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-muted/30 dark:bg-background">
+      <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Link to="/student">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Sem 4 SGPA & CGPA Calculator</h1>
-              <p className="text-sm text-gray-600">Calculate your predicted semester grades based on the new pattern</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link to="/student">
+                <Button variant="ghost" size="icon">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Sem 4 SGPA & CGPA Calculator</h1>
+                <p className="text-sm text-muted-foreground">Calculate your predicted semester grades based on the new pattern</p>
+              </div>
             </div>
+            <ModeToggle />
           </div>
         </div>
       </header>
@@ -188,10 +207,10 @@ export function SGPAPredictor() {
           <CardContent>
             <div className="space-y-4">
               {theorySubjects.map((subject) => (
-                <div key={subject.id} className="grid md:grid-cols-4 gap-4 items-end p-4 bg-gray-50 rounded-lg">
+                <div key={subject.id} className="grid md:grid-cols-4 gap-4 items-end p-4 bg-muted/40 rounded-lg border border-border">
                   <div className="md:col-span-2">
-                    <Label>{subject.name}</Label>
-                    <p className="text-xs text-gray-600">Credits: {subject.credits}</p>
+                    <Label className="text-foreground">{subject.name}</Label>
+                    <p className="text-xs text-muted-foreground mt-1">Credits: {subject.credits}</p>
                   </div>
                   <div>
                     <Label>CIE (Max 40)</Label>
@@ -225,10 +244,10 @@ export function SGPAPredictor() {
           <CardContent>
             <div className="space-y-4">
               {practicalSubjects.map((subject) => (
-                <div key={subject.id} className="grid md:grid-cols-4 gap-4 items-end p-4 bg-gray-50 rounded-lg">
+                <div key={subject.id} className="grid md:grid-cols-4 gap-4 items-end p-4 bg-muted/40 rounded-lg border border-border">
                   <div className="md:col-span-3">
-                    <Label>{subject.name}</Label>
-                    <p className="text-xs text-gray-600">Credits: {subject.credits}</p>
+                    <Label className="text-foreground">{subject.name}</Label>
+                    <p className="text-xs text-muted-foreground mt-1">Credits: {subject.credits}</p>
                   </div>
                   <div>
                     <Label>Marks (Max 50)</Label>
@@ -273,30 +292,30 @@ export function SGPAPredictor() {
         {calculatedSGPA !== null && (
           <>
             <div className="grid md:grid-cols-2 gap-6 mb-8">
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/50 shadow-sm">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="h-5 w-5" />
-                    <CardDescription className="text-blue-100">Semester 4 SGPA</CardDescription>
+                    <TrendingUp className="h-5 w-5 text-blue-700 dark:text-blue-300" />
+                    <CardDescription className="text-blue-700 dark:text-blue-300 font-medium">Semester 4 SGPA</CardDescription>
                   </div>
-                  <CardTitle className="text-5xl">{calculatedSGPA.toFixed(2)}</CardTitle>
+                  <CardTitle className="text-5xl text-blue-900 dark:text-blue-100">{calculatedSGPA.toFixed(2)}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-blue-100">Semester Grade Point Average</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-400">Semester Grade Point Average</p>
                 </CardContent>
               </Card>
 
               {calculatedCGPA !== null && (
-                <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800/50 shadow-sm">
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="h-5 w-5" />
-                      <CardDescription className="text-purple-100">Overall CGPA</CardDescription>
+                      <TrendingUp className="h-5 w-5 text-purple-700 dark:text-purple-300" />
+                      <CardDescription className="text-purple-700 dark:text-purple-300 font-medium">Overall CGPA</CardDescription>
                     </div>
-                    <CardTitle className="text-5xl">{calculatedCGPA.toFixed(2)}</CardTitle>
+                    <CardTitle className="text-5xl text-purple-900 dark:text-purple-100">{calculatedCGPA.toFixed(2)}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-purple-100">Cumulative Grade Point Average</p>
+                    <p className="text-sm text-purple-600 dark:text-purple-400">Cumulative Grade Point Average</p>
                   </CardContent>
                 </Card>
               )}
@@ -309,36 +328,36 @@ export function SGPAPredictor() {
               <CardContent>
                 <div className="space-y-3">
                   {resultsData.map((res: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/30 rounded-lg border border-border gap-4">
                       <div className="flex-1">
-                        <p className="font-semibold">{res.name}</p>
-                        <p className="text-sm text-gray-600">Credits: {res.credits}</p>
+                        <p className="font-semibold text-foreground">{res.name}</p>
+                        <p className="text-sm text-muted-foreground">Credits: {res.credits}</p>
                       </div>
                       <div className="text-center px-4">
-                        <p className="text-xl font-bold">{res.marks}</p>
-                        <p className="text-xs text-gray-600">/{res.maxMarks}</p>
+                        <p className="text-xl font-bold text-foreground">{res.marks}</p>
+                        <p className="text-xs text-muted-foreground">/{res.maxMarks}</p>
                       </div>
                       <div className="text-center px-4">
                         <Badge variant={res.grade === 'F' ? 'destructive' : 'default'}>{res.grade}</Badge>
                       </div>
                       <div className="text-center px-4">
-                        <p className="text-xl font-bold text-blue-600">{res.gp}</p>
-                        <p className="text-xs text-gray-600">GP</p>
+                        <p className="text-xl font-bold text-primary">{res.gp}</p>
+                        <p className="text-xs text-muted-foreground">GP</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-semibold">{(res.gp * res.credits).toFixed(2)}</p>
-                        <p className="text-xs text-gray-600">Weighted</p>
+                        <p className="text-lg font-semibold text-foreground">{(res.gp * res.credits).toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">Weighted</p>
                       </div>
                     </div>
                   ))}
                   
-                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border-2 border-blue-200 mt-4">
+                  <div className="flex flex-col sm:flex-row items-center justify-between p-4 bg-primary/10 rounded-lg border-2 border-primary/20 mt-4 gap-4">
                     <div>
-                      <p className="font-bold text-lg">Total</p>
-                      <p className="text-sm text-gray-600">Credits: 20</p>
+                      <p className="font-bold text-lg text-foreground">Total</p>
+                      <p className="text-sm text-muted-foreground">Credits: 20</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-blue-600">SGPA: {calculatedSGPA.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-primary">SGPA: {calculatedSGPA.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>

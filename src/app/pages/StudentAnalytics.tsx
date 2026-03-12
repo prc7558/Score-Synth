@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { ModeToggle } from "../components/mode-toggle";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, AreaChart, Area
@@ -28,8 +29,8 @@ const historicalTrend = [
 
 export function StudentAnalytics() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-muted/30 dark:bg-background">
+      <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/student">
@@ -38,56 +39,57 @@ export function StudentAnalytics() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Performance Analytics</h1>
-              <p className="text-sm text-gray-600">Visual breakdown of your academic journey</p>
+              <h1 className="text-2xl font-bold text-foreground">Performance Analytics</h1>
+              <p className="text-sm text-muted-foreground">Visual breakdown of your academic journey</p>
             </div>
           </div>
+          <ModeToggle />
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white border-0 shadow-md">
+          <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/50 shadow-sm">
             <CardHeader className="pb-2">
-              <CardDescription className="text-indigo-100 font-medium">Current CGPA</CardDescription>
-              <CardTitle className="text-4xl">8.25</CardTitle>
+              <CardDescription className="text-blue-700 dark:text-blue-300 font-medium">Current CGPA</CardDescription>
+              <CardTitle className="text-4xl text-blue-900 dark:text-blue-100">8.25</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-indigo-100 flex items-center mt-2">
+              <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center mt-2">
                 <TrendingUp className="h-4 w-4 mr-1"/> +0.10 from last sem
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-white shadow-sm">
+          <Card className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/50 shadow-sm">
             <CardHeader className="pb-2">
-              <CardDescription className="text-gray-500 font-medium">Rank in Class</CardDescription>
-              <CardTitle className="text-4xl text-gray-900">12<span className="text-2xl text-gray-400">/60</span></CardTitle>
+              <CardDescription className="text-emerald-700 dark:text-emerald-300 font-medium">Rank in Class</CardDescription>
+              <CardTitle className="text-4xl text-emerald-900 dark:text-emerald-100">12<span className="text-2xl text-emerald-700/60 dark:text-emerald-300/60">/60</span></CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-green-600 flex items-center mt-2 font-medium">
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center mt-2 font-medium">
                 Top 20%
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-white shadow-sm">
+          <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800/50 shadow-sm">
             <CardHeader className="pb-2">
-              <CardDescription className="text-gray-500 font-medium">Strongest Subject</CardDescription>
-              <CardTitle className="text-2xl text-gray-900 truncate">PCPD</CardTitle>
+              <CardDescription className="text-purple-700 dark:text-purple-300 font-medium">Strongest Subject</CardDescription>
+              <CardTitle className="text-2xl text-purple-900 dark:text-purple-100 truncate">PCPD</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
                 Grade: O (10 GP)
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-white shadow-sm">
+          <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50 shadow-sm">
             <CardHeader className="pb-2">
-              <CardDescription className="text-gray-500 font-medium">Needs Attention</CardDescription>
-              <CardTitle className="text-2xl text-gray-900 truncate">PPL</CardTitle>
+              <CardDescription className="text-amber-700 dark:text-amber-300 font-medium">Needs Attention</CardDescription>
+              <CardTitle className="text-2xl text-amber-900 dark:text-amber-100 truncate">PPL</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
                 Grade: B+ (7 GP)
               </p>
             </CardContent>
@@ -180,19 +182,19 @@ export function StudentAnalytics() {
               <div className="space-y-4">
                 {staticSubjectsData.slice(0, 5).map((sub, idx) => (
                   <div key={idx} className="flex items-center">
-                    <div className="w-32 truncate font-medium text-sm text-gray-900" title={sub.full}>{sub.full}</div>
+                    <div className="w-32 truncate font-medium text-sm text-foreground" title={sub.full}>{sub.full}</div>
                     <div className="flex-1 ml-4">
-                      <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div className="w-full bg-muted rounded-full h-2.5">
                         <div 
-                          className={`h-2.5 rounded-full ${sub.marks >= 85 ? 'bg-green-500' : sub.marks >= 75 ? 'bg-blue-500' : 'bg-yellow-500'}`} 
+                          className={`h-2.5 rounded-full ${sub.marks >= 85 ? 'bg-emerald-500' : sub.marks >= 75 ? 'bg-blue-500' : 'bg-amber-500'}`} 
                           style={{ width: `${sub.marks}%` }}
                         ></div>
                       </div>
                     </div>
-                    <div className="w-16 text-right ml-4 text-sm font-semibold text-gray-700">{sub.marks}%</div>
+                    <div className="w-16 text-right ml-4 text-sm font-semibold text-muted-foreground">{sub.marks}%</div>
                   </div>
                 ))}
-                <p className="text-center text-sm text-gray-500 mt-4 pt-4 border-t">Showing top 5 subjects. Keep up the good work!</p>
+                <p className="text-center text-sm text-muted-foreground mt-4 pt-4 border-t border-border">Showing top 5 subjects. Keep up the good work!</p>
               </div>
             </CardContent>
           </Card>

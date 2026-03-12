@@ -1,3 +1,4 @@
+import { ModeToggle } from "../components/mode-toggle";
 import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle } from "lucide-react";
@@ -77,6 +78,64 @@ export function UploadMarks() {
              setGeneratedFileId(jsonResponse.fileId || "");
              setUploadProgress(100);
              setUploadStatus("success");
+             
+             // Fetch parsed marks from GAS and log to XAMPP formally
+             try {
+               const gasDataResponse = await fetch(`${gasUrl}?sheetId=${jsonResponse.fileId}`);
+               if (gasDataResponse.ok) {
+                 const gasJson = await gasDataResponse.json();
+                 if (gasJson.status === 'success' && gasJson.data) {
+                   const fullData = gasJson.data;
+                   const headerRowIdx = 10;
+                   const dataStartIdx = 11;
+                   
+                   let marksToSave: any[] = [];
+                   if (fullData.length > dataStartIdx && fullData[headerRowIdx]) {
+                     const headers = fullData[headerRowIdx];
+                     const calcStartIdx = headers.findIndex((h: any) => h === "Total");
+                     
+                     if(calcStartIdx !== -1) {
+                         const totalIdx = calcStartIdx;
+                         const percentageIdx = calcStartIdx + 1;
+                         const gradeIdx = calcStartIdx + 2;
+                         
+                         for (let i = dataStartIdx; i < fullData.length; i++) {
+                           if (fullData[i][0] === "") break;
+                           const row = fullData[i];
+                           if(row[1]) {
+                               marksToSave.push({
+                                 rollNo: String(row[1]),
+                                 name: String(row[2]),
+                                 sub1: Number(row[3]) || 0,
+                                 sub2: Number(row[4]) || 0,
+                                 sub3: Number(row[5]) || 0,
+                                 sub4: Number(row[6]) || 0,
+                                 total: Number(row[totalIdx]) || 0,
+                                 percentage: Number(row[percentageIdx]) || 0,
+                                 grade: String(row[gradeIdx]) || ''
+                               });
+                           }
+                         }
+                     }
+                   }
+
+                   // Ping XAMPP with full data packet
+                   fetch('http://localhost/scoresynth/api.php', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                       action: 'save_upload',
+                       filename: selectedFile.name,
+                       status: 'Success',
+                       marks: marksToSave
+                     })
+                   }).catch(e => console.error("XAMPP save_upload failed:", e));
+                 }
+               }
+             } catch (e) {
+               console.error("XAMPP save_upload error:", e);
+             }
+
            } else {
              setErrorMessage(jsonResponse.message || "Apps script reported an internal error.");
              setUploadStatus("error");
@@ -103,10 +162,10 @@ export function UploadMarks() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30 dark:bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-card shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/faculty">
               <Button variant="ghost" size="icon">
@@ -114,11 +173,12 @@ export function UploadMarks() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Upload Marks</h1>
-              <p className="text-sm text-gray-600">Process student exam results</p>
+              <h1 className="text-2xl font-bold text-foreground">Upload Marks</h1>
+              <p className="text-sm text-muted-foreground">Process student exam results</p>
             </div>
           </div>
-        </div>
+        <ModeToggle />
+          </div>
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -167,32 +227,32 @@ export function UploadMarks() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
                   <FileSpreadsheet className="h-5 w-5 text-blue-600" />
                   <div>
                     <p className="font-medium">Roll Number</p>
-                    <p className="text-xs text-gray-600">Student roll number</p>
+                    <p className="text-xs text-muted-foreground">Student roll number</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
                   <FileSpreadsheet className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-medium">Student Name</p>
-                    <p className="text-xs text-gray-600">Full name</p>
+                    <p className="text-xs text-muted-foreground">Full name</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
                   <FileSpreadsheet className="h-5 w-5 text-purple-600" />
                   <div>
                     <p className="font-medium">Email ID</p>
-                    <p className="text-xs text-gray-600">For report delivery</p>
+                    <p className="text-xs text-muted-foreground">For report delivery</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
                   <FileSpreadsheet className="h-5 w-5 text-orange-600" />
                   <div>
                     <p className="font-medium">Subject Columns</p>
-                    <p className="text-xs text-gray-600">Marks for each subject</p>
+                    <p className="text-xs text-muted-foreground">Marks for each subject</p>
                   </div>
                 </div>
               </div>
@@ -245,7 +305,7 @@ export function UploadMarks() {
                  <Button variant="ghost" onClick={() => {
                    setUploadStatus("idle");
                    setSelectedFile(null);
-                 }} className="w-full text-gray-500">
+                 }} className="w-full text-muted-foreground">
                    Upload Another File
                  </Button>
               </div>
@@ -302,11 +362,11 @@ export function UploadMarks() {
                     type="file"
                     accept=".xlsx,.xls"
                     onChange={handleFileChange}
-                    className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="flex-1 text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                 </div>
                 {selectedFile && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
                   </p>
                 )}
@@ -366,7 +426,7 @@ export function UploadMarks() {
                 </div>
                 <div>
                   <p className="font-medium">File Validation</p>
-                  <p className="text-gray-600">Excel file is validated for format and data integrity</p>
+                  <p className="text-muted-foreground">Excel file is validated for format and data integrity</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -375,7 +435,7 @@ export function UploadMarks() {
                 </div>
                 <div>
                   <p className="font-medium">Result Calculation</p>
-                  <p className="text-gray-600">Total marks, percentage, grades, and ranks are calculated</p>
+                  <p className="text-muted-foreground">Total marks, percentage, grades, and ranks are calculated</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -384,7 +444,7 @@ export function UploadMarks() {
                 </div>
                 <div>
                   <p className="font-medium">Database Storage</p>
-                  <p className="text-gray-600">All data is securely stored in the database</p>
+                  <p className="text-muted-foreground">All data is securely stored in the database</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -393,7 +453,7 @@ export function UploadMarks() {
                 </div>
                 <div>
                   <p className="font-medium">Report Generation</p>
-                  <p className="text-gray-600">PDF report cards are generated for each student</p>
+                  <p className="text-muted-foreground">PDF report cards are generated for each student</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -402,7 +462,7 @@ export function UploadMarks() {
                 </div>
                 <div>
                   <p className="font-medium">Email Distribution</p>
-                  <p className="text-gray-600">Report cards are automatically sent to student email addresses</p>
+                  <p className="text-muted-foreground">Report cards are automatically sent to student email addresses</p>
                 </div>
               </div>
             </div>

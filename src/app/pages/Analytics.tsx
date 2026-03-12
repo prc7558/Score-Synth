@@ -1,3 +1,4 @@
+import { ModeToggle } from "../components/mode-toggle";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router";
 import { ArrowLeft, TrendingUp, Users, Award, AlertCircle, Loader2 } from "lucide-react";
@@ -208,11 +209,11 @@ export function Analytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted/30 dark:bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto" />
           <h2 className="text-xl font-semibold text-gray-700">Loading Analytics...</h2>
-          <p className="text-gray-500">Fetching live data from Google Sheets.</p>
+          <p className="text-muted-foreground">Fetching live data from Google Sheets.</p>
         </div>
       </div>
     );
@@ -220,11 +221,11 @@ export function Analytics() {
 
   if (error || !parsedData) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-muted/30 dark:bg-background p-8">
         <Link to="/faculty" className="mb-6 inline-block">
           <Button variant="ghost"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
         </Link>
-        <Alert variant="destructive" className="max-w-2xl mx-auto mt-12 bg-white">
+        <Alert variant="destructive" className="max-w-2xl mx-auto mt-12 bg-card">
           <AlertCircle className="h-5 w-5" />
           <AlertTitle>Error Loading Analytics</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -234,10 +235,10 @@ export function Analytics() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30 dark:bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-card shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/faculty">
               <Button variant="ghost" size="icon">
@@ -245,11 +246,12 @@ export function Analytics() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Performance Analytics</h1>
-              <p className="text-sm text-gray-600">Live data from Google Sheets</p>
+              <h1 className="text-2xl font-bold text-foreground">Performance Analytics</h1>
+              <p className="text-sm text-muted-foreground">Live data from Google Sheets</p>
             </div>
           </div>
-        </div>
+        <ModeToggle />
+          </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -361,7 +363,7 @@ export function Analytics() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
                     <div>
-                      <p className="text-sm text-gray-600">Passed Students</p>
+                      <p className="text-sm text-muted-foreground">Passed Students</p>
                       <p className="text-3xl font-bold text-green-600">{parsedData.passCount}</p>
                     </div>
                     <div className="text-right">
@@ -372,7 +374,7 @@ export function Analytics() {
                   </div>
                   <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg">
                     <div>
-                      <p className="text-sm text-gray-600">Failed Students</p>
+                      <p className="text-sm text-muted-foreground">Failed Students</p>
                       <p className="text-3xl font-bold text-red-600">{parsedData.failCount}</p>
                     </div>
                     <div className="text-right">
@@ -385,9 +387,9 @@ export function Analytics() {
 
                 <div className="space-y-2">
                   <p className="text-sm font-medium mb-2 text-gray-700">Subject-wise Pass Rate</p>
-                  <div className="bg-white border rounded-md overflow-hidden pt-2 px-4 pb-2">
+                  <div className="bg-card border rounded-md overflow-hidden pt-2 px-4 pb-2">
                     {parsedData.subjectStats.map((subject, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0 hover:bg-gray-50">
+                      <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0 hover:bg-muted/50 dark:bg-muted/20">
                         <span className="text-sm font-medium">{subject.name}</span>
                         <Badge variant="outline">{subject.passRate}%</Badge>
                       </div>

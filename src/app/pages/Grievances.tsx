@@ -1,3 +1,4 @@
+import { ModeToggle } from "../components/mode-toggle";
 import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, MessageSquare, Send, CheckCircle, Clock, AlertCircle } from "lucide-react";
@@ -36,6 +37,21 @@ export function Grievances() {
     setSubject("");
     setMessage("");
     toast.success("Grievance submitted successfully!");
+
+    // Log to XAMPP formally
+    try {
+      fetch('http://localhost/scoresynth/api.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save_grievance',
+          subject,
+          message
+        })
+      }).catch(e => console.error("XAMPP save_grievance failed:", e));
+    } catch (e) {
+      console.error("XAMPP save_grievance error:", e);
+    }
   };
 
   const handleUpdateStatus = (id: number, newStatus: string) => {
@@ -76,10 +92,10 @@ export function Grievances() {
   const resolvedCount = grievances.filter(g => g.status === 'Resolved').length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30 dark:bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-card shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/student">
               <Button variant="ghost" size="icon">
@@ -87,11 +103,12 @@ export function Grievances() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Grievance System</h1>
-              <p className="text-sm text-gray-600">Submit and track result queries</p>
+              <h1 className="text-2xl font-bold text-foreground">Grievance System</h1>
+              <p className="text-sm text-muted-foreground">Submit and track result queries</p>
             </div>
           </div>
-        </div>
+        <ModeToggle />
+          </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -161,7 +178,7 @@ export function Grievances() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Be specific and include all relevant details for faster resolution
                   </p>
                 </div>
@@ -217,7 +234,7 @@ export function Grievances() {
                   {grievances.length === 0 ? (
                     <div className="text-center py-12">
                       <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No grievances submitted yet</p>
+                      <p className="text-muted-foreground">No grievances submitted yet</p>
                     </div>
                   ) : (
                     grievances.map((grievance) => {
@@ -284,7 +301,7 @@ export function Grievances() {
                 </div>
                 <div>
                   <p className="font-medium">Grievance Received</p>
-                  <p className="text-gray-600">Your grievance is logged in the system with "Pending" status</p>
+                  <p className="text-muted-foreground">Your grievance is logged in the system with "Pending" status</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -293,7 +310,7 @@ export function Grievances() {
                 </div>
                 <div>
                   <p className="font-medium">Faculty Review</p>
-                  <p className="text-gray-600">Faculty reviews your submission and updates status to "In Progress"</p>
+                  <p className="text-muted-foreground">Faculty reviews your submission and updates status to "In Progress"</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -302,7 +319,7 @@ export function Grievances() {
                 </div>
                 <div>
                   <p className="font-medium">Verification</p>
-                  <p className="text-gray-600">Your answer sheet is re-evaluated or marks are verified</p>
+                  <p className="text-muted-foreground">Your answer sheet is re-evaluated or marks are verified</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -311,7 +328,7 @@ export function Grievances() {
                 </div>
                 <div>
                   <p className="font-medium">Resolution</p>
-                  <p className="text-gray-600">Status is updated to "Resolved" and you'll be notified via email</p>
+                  <p className="text-muted-foreground">Status is updated to "Resolved" and you'll be notified via email</p>
                 </div>
               </div>
             </div>
