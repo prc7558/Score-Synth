@@ -220,55 +220,7 @@ export function FacultyDashboard() {
             </Link>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <Link to="/analytics">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="bg-purple-100 p-3 rounded-lg">
-                    <BarChart3 className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <CardTitle>Analytics</CardTitle>
-                    <CardDescription>Performance insights</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  View detailed class performance, subject statistics, and trends
-                </p>
-                <Button className="w-full" variant="outline">
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  View Analytics
-                </Button>
-              </CardContent>
-            </Link>
-          </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <Link to="/reports">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="bg-orange-100 p-3 rounded-lg">
-                    <FileText className="h-6 w-6 text-orange-600" />
-                  </div>
-                  <div>
-                    <CardTitle>Report Cards</CardTitle>
-                    <CardDescription>Generate & distribute</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Generate PDF report cards and send to students via email
-                </p>
-                <Button className="w-full" variant="outline">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Manage Reports
-                </Button>
-              </CardContent>
-            </Link>
-          </Card>
 
           <Card className="hover:shadow-lg transition-shadow">
             <Link to="/grievances">

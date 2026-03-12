@@ -1,44 +1,228 @@
-import { Link } from "react-router";
-import { ArrowLeft, Download, Mail, FileText, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router";
+import { ArrowLeft, Download, Mail, Search, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
-import { students, reportCards, marks, subjects, exams } from "../data/mockData";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { useState } from "react";
 import { toast } from "sonner";
 
+interface StudentReport {
+  rank: number;
+  rollNumber: string;
+  name: string;
+  email: string;
+  totalObtained: number;
+  totalMax: number;
+  percentage: string;
+  grade: string;
+  passStatus: string;
+}
+
 export function ReportCards() {
+  const [searchParams] = useSearchParams();
+  const sheetId = searchParams.get("sheetId");
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Combine student and report card data
-  const reportData = reportCards.map(rc => {
-    const student = students.find(s => s.student_id === rc.student_id);
-    return {
-      ...rc,
-      student,
-    };
-  }).filter(data => 
-    data.student?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    data.student?.roll_number.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Data State
+  const [reportData, setReportData] = useState<StudentReport[]>([]);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [examTypeInfo, setExamTypeInfo] = useState("Not specified in sheet");
 
-  const handleDownloadReport = (studentName: string) => {
-    toast.success(`Downloading report card for ${studentName}`);
+  useEffect(() => {
+    async function fetchData() {
+      if (!sheetId) {
+        setError("No Google Sheet ID provided in the URL.");
+        setLoading(false);
+        return;
+      }
+
+      const gasUrl = import.meta.env.VITE_GAS_WEB_APP_URL;
+      if (!gasUrl) {
+        setError("Missing VITE_GAS_WEB_APP_URL configuration.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const fetchUrl = `${gasUrl}?sheetId=${sheetId}`;
+        const response = await fetch(fetchUrl);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch data: ${response.status}`);
+        }
+
+        const json = await response.json();
+
+        if (json.status !== "success") {
+          throw new Error(json.message || "Unknown error from Google Apps Script.");
+        }
+
+        parseSheetData(json.data);
+      } catch (err: any) {
+        console.error("Error fetching report cards:", err);
+        setError(err.message || "Failed to load report cards.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [sheetId]);
+
+  const parseSheetData = (fullData: any[][]) => {
+    try {
+      const headerRowIdx = 10; // Row 11
+      const dataStartIdx = 11; // Row 12
+
+      if (fullData.length <= dataStartIdx) throw new Error("Sheet contains no record data.");
+
+      // Try to extract some global Exam Type info from cell C3 if it exists in standard template
+      if (fullData[2] && fullData[2][2]) {
+        setExamTypeInfo(fullData[2][2].toString());
+      }
+
+      const headers = fullData[headerRowIdx];
+
+      // Identify bounds
+      let subjectStartIndex = 3; // Col D (index 3)
+      let emailIdx = headers.findIndex(h => typeof h === 'string' && h.toLowerCase().includes("email"));
+      let subjectEndIndex = emailIdx === -1 ? headers.length : emailIdx;
+      const numSubjects = subjectEndIndex - subjectStartIndex;
+      const totalMaxMarks = numSubjects * 16; // 4 subjects * 16 marks = 64
+
+      // Calc columns
+      const calcStartIdx = headers.findIndex(h => h === "Total");
+      if (calcStartIdx === -1) throw new Error("Calculated columns (Total, Percentage) not found in header.");
+
+      const totalIdx = calcStartIdx;
+      const percentageIdx = calcStartIdx + 1;
+      const gradeIdx = calcStartIdx + 2;
+      const rankIdx = calcStartIdx + 3;
+
+      const parsedReports: StudentReport[] = [];
+
+      for (let i = dataStartIdx; i < fullData.length; i++) {
+        if (fullData[i][0] === "") break; // End of records
+
+        const row = fullData[i];
+        const grade = String(row[gradeIdx]);
+        const passStatus = grade === "F" ? "FAIL" : "PASS";
+
+        parsedReports.push({
+          rank: Number(row[rankIdx]) || 0,
+          rollNumber: String(row[1]),
+          name: String(row[2]),
+          email: emailIdx !== -1 ? String(row[emailIdx]) : "No Email",
+          totalObtained: Number(row[totalIdx]) || 0,
+          totalMax: totalMaxMarks,
+          percentage: Number(row[percentageIdx]).toFixed(1),
+          grade: grade,
+          passStatus: passStatus
+        });
+      }
+
+      parsedReports.sort((a, b) => a.rank - b.rank);
+      setReportData(parsedReports);
+
+    } catch (e: any) {
+      console.error("Parse error:", e);
+      setError("Failed to parse sheet data. Is the format correct? " + e.message);
+    }
   };
 
-  const handleEmailReport = (studentName: string, email: string) => {
-    toast.success(`Report card sent to ${email}`);
+  const executeSendEmails = async (targetRollNo?: string) => {
+    const gasUrl = import.meta.env.VITE_GAS_WEB_APP_URL;
+    if (!gasUrl) {
+      toast.error("GAS URL not configured.");
+      return;
+    }
+
+    setSendingEmail(true);
+    const toastId = toast.loading(targetRollNo ? "Sending individual email..." : "Sending all emails in bulk...");
+
+    try {
+      const payload: any = {
+        action: "sendEmails",
+        sheetId: sheetId
+      };
+      if (targetRollNo) {
+        payload.studentRollNo = targetRollNo;
+      }
+
+      const response = await fetch(gasUrl, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      const json = await response.json();
+
+      if (json.status === "success") {
+        toast.success(`Successfully sent ${json.sentCount} email(s)!`, { id: toastId });
+      } else {
+        throw new Error(json.message || "Failed to send emails via GAS.");
+      }
+    } catch (err: any) {
+      console.error("Email error:", err);
+      toast.error(`Email delivery failed: ${err.message}`, { id: toastId });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const handleEmailReport = (rollNumber: string, studentName: string) => {
+    executeSendEmails(rollNumber);
   };
 
   const handleEmailAll = () => {
-    toast.success(`Sending report cards to all ${students.length} students...`);
+    executeSendEmails();
   };
 
   const handleDownloadAll = () => {
-    toast.success(`Downloading all ${students.length} report cards...`);
+    toast.success(`Downloading visual report cards locally is a premium feature currently in development.`);
   };
+
+  const handleDownloadReport = (studentName: string) => {
+    toast.success(`Downloading PDF report for ${studentName} is in development.`);
+  };
+
+  // Filter 
+  const filteredData = reportData.filter(data =>
+    data.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    data.rollNumber.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto" />
+          <h2 className="text-xl font-semibold text-gray-700">Loading Student Reports...</h2>
+          <p className="text-gray-500">Fetching live data from Google Sheets.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || reportData.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <Link to="/faculty" className="mb-6 inline-block">
+          <Button variant="ghost"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+        </Link>
+        <Alert variant="destructive" className="max-w-2xl mx-auto mt-12 bg-white">
+          <AlertCircle className="h-5 w-5" />
+          <AlertTitle>Error Loading Reports</AlertTitle>
+          <AlertDescription>{error || "No student data found."}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,7 +238,7 @@ export function ReportCards() {
               </Link>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Report Cards</h1>
-                <p className="text-sm text-gray-600">Generate and distribute student reports</p>
+                <p className="text-sm text-gray-600">Generate and distribute student reports directly via Google Sheets</p>
               </div>
             </div>
           </div>
@@ -66,27 +250,23 @@ export function ReportCards() {
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Exam Details</CardTitle>
+              <CardTitle className="text-lg">Database Info</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Exam Type:</span>
-                  <span className="font-semibold">Unit Test 1</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Academic Year:</span>
-                  <span className="font-semibold">TE (Third Year)</span>
+                  <span className="font-semibold">{examTypeInfo}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Students:</span>
-                  <span className="font-semibold">{students.length}</span>
+                  <span className="font-semibold">{reportData.length}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={handleDownloadAll}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer opacity-70" onClick={handleDownloadAll}>
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="bg-blue-100 p-2 rounded-lg">
@@ -97,16 +277,16 @@ export function ReportCards() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-600 mb-3">
-                Download all report cards as a ZIP file
+                Download all visual report cards (Coming Soon)
               </p>
-              <Button className="w-full" variant="outline">
+              <Button className="w-full" variant="outline" disabled>
                 <Download className="mr-2 h-4 w-4" />
                 Download All PDFs
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={handleEmailAll}>
+          <Card className={`hover:shadow-lg transition-shadow ${sendingEmail ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={!sendingEmail ? handleEmailAll : undefined}>
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="bg-green-100 p-2 rounded-lg">
@@ -117,11 +297,11 @@ export function ReportCards() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-gray-600 mb-3">
-                Send report cards to all students via email
+                Send report cards to all students via automated GAS emails
               </p>
-              <Button className="w-full" variant="outline">
-                <Mail className="mr-2 h-4 w-4" />
-                Send All Emails
+              <Button className="w-full" variant="outline" disabled={sendingEmail}>
+                {sendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                {sendingEmail ? "Sending Setup..." : "Send All Emails"}
               </Button>
             </CardContent>
           </Card>
@@ -146,7 +326,7 @@ export function ReportCards() {
         <Card>
           <CardHeader>
             <CardTitle>Student Report Cards</CardTitle>
-            <CardDescription>Individual report card management</CardDescription>
+            <CardDescription>Individual report tracking and distribution</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -164,48 +344,47 @@ export function ReportCards() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reportData.map((data) => {
-                  const studentMarks = marks.filter(m => m.student_id === data.student_id);
-                  const totalObtained = studentMarks.reduce((sum, m) => sum + m.marks, 0);
-                  const totalMax = studentMarks.reduce((sum, m) => sum + m.max_marks, 0);
-
+                {filteredData.map((data) => {
                   return (
-                    <TableRow key={data.report_id}>
+                    <TableRow key={data.rollNumber}>
                       <TableCell className="font-bold">
-                        {data.rank === 1 && <span>🥇</span>}
-                        {data.rank === 2 && <span>🥈</span>}
-                        {data.rank === 3 && <span>🥉</span>}
+                        {data.rank === 1 && <span className="text-yellow-600">🥇</span>}
+                        {data.rank === 2 && <span className="text-gray-400">🥈</span>}
+                        {data.rank === 3 && <span className="text-orange-600">🥉</span>}
                         {data.rank > 3 && <span>#{data.rank}</span>}
                       </TableCell>
-                      <TableCell>{data.student?.roll_number}</TableCell>
-                      <TableCell className="font-medium">{data.student?.name}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{data.student?.email}</TableCell>
+                      <TableCell>{data.rollNumber}</TableCell>
+                      <TableCell className="font-medium">{data.name}</TableCell>
+                      <TableCell className="text-sm text-gray-600">{data.email}</TableCell>
                       <TableCell className="text-right">
-                        <span className="font-semibold">{totalObtained}</span>
-                        <span className="text-gray-500">/{totalMax}</span>
+                        <span className="font-semibold">{data.totalObtained}</span>
+                        <span className="text-gray-500">/{data.totalMax}</span>
                       </TableCell>
-                      <TableCell className="text-right font-semibold">{data.percentage.toFixed(1)}%</TableCell>
+                      <TableCell className="text-right font-semibold">{data.percentage}%</TableCell>
                       <TableCell className="text-center">
                         <Badge>{data.grade}</Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={data.pass_status === 'PASS' ? 'default' : 'destructive'}>
-                          {data.pass_status}
+                        <Badge variant={data.passStatus === 'PASS' ? 'default' : 'destructive'}>
+                          {data.passStatus}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2 justify-end">
-                          <Button 
-                            size="sm" 
+                          <Button
+                            title="Coming Soon - Feature in Development."
+                            size="sm"
                             variant="ghost"
-                            onClick={() => handleDownloadReport(data.student?.name || '')}
+                            onClick={() => handleDownloadReport(data.name)}
                           >
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            title={`Send email directly to ${data.email}`}
+                            size="sm"
                             variant="ghost"
-                            onClick={() => handleEmailReport(data.student?.name || '', data.student?.email || '')}
+                            disabled={sendingEmail}
+                            onClick={() => handleEmailReport(data.rollNumber, data.name)}
                           >
                             <Mail className="h-4 w-4" />
                           </Button>
@@ -216,93 +395,6 @@ export function ReportCards() {
                 })}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-
-        {/* Report Template Preview */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle>Report Card Template</CardTitle>
-            <CardDescription>Preview of generated PDF report cards</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-white">
-              <div className="max-w-2xl mx-auto">
-                {/* Header */}
-                <div className="text-center mb-6 pb-4 border-b-2">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">Score Synth</h2>
-                  <p className="text-sm text-gray-600">Academic Report Card</p>
-                </div>
-
-                {/* Student Info */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <p className="text-sm text-gray-600">Student Name</p>
-                    <p className="font-semibold">Parth Chaudhari</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Roll Number</p>
-                    <p className="font-semibold">TE-001</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Academic Year</p>
-                    <p className="font-semibold">Third Year (TE)</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Exam Type</p>
-                    <p className="font-semibold">Unit Test 1</p>
-                  </div>
-                </div>
-
-                {/* Marks Table */}
-                <div className="mb-6">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="text-left p-2">Subject</th>
-                        <th className="text-right p-2">Marks Obtained</th>
-                        <th className="text-right p-2">Max Marks</th>
-                        <th className="text-right p-2">Grade</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {subjects.slice(0, 3).map((subject) => (
-                        <tr key={subject.subject_id} className="border-b">
-                          <td className="p-2">{subject.subject_name}</td>
-                          <td className="text-right p-2">48</td>
-                          <td className="text-right p-2">50</td>
-                          <td className="text-right p-2">O</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Summary */}
-                <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="text-center">
-                    <p className="text-xs text-gray-600 mb-1">Total Marks</p>
-                    <p className="text-lg font-bold">235/250</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-600 mb-1">Percentage</p>
-                    <p className="text-lg font-bold text-blue-600">94.0%</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-600 mb-1">Grade</p>
-                    <p className="text-lg font-bold text-green-600">O</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-600 mb-1">Rank</p>
-                    <p className="text-lg font-bold text-purple-600">#1</p>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t text-center text-xs text-gray-500">
-                  Generated on March 11, 2026 | PANK Nexus
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

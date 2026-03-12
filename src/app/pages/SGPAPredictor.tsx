@@ -6,78 +6,117 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Badge } from "../components/ui/badge";
-import { subjects, gradeToPoint } from "../data/mockData";
 
-interface SubjectGrade {
-  subject_id: number;
-  predicted_marks: number;
-  grade: string;
-  grade_point: number;
-}
+const theorySubjects = [
+  { id: 'dbms', name: 'Database Management Systems', credits: 3 },
+  { id: 'ppl', name: 'Principles of Programming Languages', credits: 3 },
+  { id: 'se', name: 'Software Engineering', credits: 3 },
+  { id: 'oe', name: 'Open Elective', credits: 3 },
+];
+
+const practicalSubjects = [
+  { id: 'dbms_lab', name: 'DBMS Lab', credits: 1 },
+  { id: 'ppl_lab', name: 'PPL Lab', credits: 1 },
+  { id: 'wt', name: 'Web Technology', credits: 2 },
+  { id: 'os', name: 'Operating Systems Workshop', credits: 2 },
+  { id: 'pcpd', name: 'PCPD', credits: 2 },
+];
+
+const marksToGradePoint = (marks: number, maxMarks: number) => {
+  return Math.ceil((marks / maxMarks) * 10);
+};
+
+const gradeFromPoint = (point: number) => {
+  if (point >= 10) return "O";
+  if (point === 9) return "A+";
+  if (point === 8) return "A";
+  if (point === 7) return "B+";
+  if (point === 6) return "B";
+  if (point === 5) return "P";
+  return "F";
+};
 
 export function SGPAPredictor() {
-  const [subjectGrades, setSubjectGrades] = useState<SubjectGrade[]>(
-    subjects.map(s => ({
-      subject_id: s.subject_id,
-      predicted_marks: 0,
-      grade: '',
-      grade_point: 0,
-    }))
-  );
-  const [previousSGPA, setPreviousSGPA] = useState<string>("");
+  const [theoryMarks, setTheoryMarks] = useState<Record<string, { cie: number, ete: number }>>({});
+  const [practicalMarks, setPracticalMarks] = useState<Record<string, number>>({});
+  const [fyCgpa, setFyCgpa] = useState<string>("");
+  const [sem3Sgpa, setSem3Sgpa] = useState<string>("");
+  
   const [calculatedSGPA, setCalculatedSGPA] = useState<number | null>(null);
   const [calculatedCGPA, setCalculatedCGPA] = useState<number | null>(null);
+  const [resultsData, setResultsData] = useState<any[]>([]);
 
-  const calculateGradeFromMarks = (marks: number): string => {
-    const percentage = marks; // Assuming marks are out of 100
-    if (percentage >= 90) return 'O';
-    if (percentage >= 80) return 'A+';
-    if (percentage >= 70) return 'A';
-    if (percentage >= 60) return 'B+';
-    if (percentage >= 50) return 'B';
-    if (percentage >= 40) return 'P';
-    return 'F';
-  };
-
-  const handleMarksChange = (subjectId: number, marks: number) => {
-    setSubjectGrades(prev => prev.map(sg => {
-      if (sg.subject_id === subjectId) {
-        const grade = calculateGradeFromMarks(marks);
-        const gradePoint = gradeToPoint[grade] || 0;
-        return {
-          ...sg,
-          predicted_marks: marks,
-          grade,
-          grade_point: gradePoint,
-        };
-      }
-      return sg;
+  const handleTheoryChange = (id: string, field: 'cie' | 'ete', val: number) => {
+    setTheoryMarks(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: val }
     }));
   };
 
+  const handlePracticalChange = (id: string, val: number) => {
+    setPracticalMarks(prev => ({ ...prev, [id]: val }));
+  };
+
   const calculateSGPA = () => {
-    const totalCredits = subjects.reduce((sum, s) => sum + s.credits, 0);
-    const weightedSum = subjectGrades.reduce((sum, sg) => {
-      const subject = subjects.find(s => s.subject_id === sg.subject_id);
-      return sum + (sg.grade_point * (subject?.credits || 0));
-    }, 0);
+    let totalPoints = 0;
+    let totalCredits = 20;
+    const finalResults: { name: string; credits: number; marks: number; maxMarks: number; gp: number; grade: string; }[] = [];
 
-    const sgpa = weightedSum / totalCredits;
+    // Calculate Theory
+    theorySubjects.forEach(sub => {
+      const marks = theoryMarks[sub.id] || { cie: 0, ete: 0 };
+      const totalParamsMarks = (Number(marks.cie) || 0) + (Number(marks.ete) || 0);
+      const gp = marksToGradePoint(totalParamsMarks, 100);
+      totalPoints += (gp * sub.credits);
+      
+      finalResults.push({
+        name: sub.name,
+        credits: sub.credits,
+        marks: totalParamsMarks,
+        maxMarks: 100,
+        gp: gp,
+        grade: gradeFromPoint(gp)
+      });
+    });
+
+    // Calculate Practicals
+    practicalSubjects.forEach(sub => {
+      const marks = Number(practicalMarks[sub.id]) || 0;
+      const gp = marksToGradePoint(marks, 50);
+      totalPoints += (gp * sub.credits);
+
+      finalResults.push({
+        name: sub.name,
+        credits: sub.credits,
+        marks: marks,
+        maxMarks: 50,
+        gp: gp,
+        grade: gradeFromPoint(gp)
+      });
+    });
+
+    const sgpa = totalPoints / totalCredits;
     setCalculatedSGPA(sgpa);
+    setResultsData(finalResults);
 
-    // Calculate CGPA if previous SGPA is provided
-    if (previousSGPA) {
-      const prevSGPA = parseFloat(previousSGPA);
-      const cgpa = (prevSGPA + sgpa) / 2; // Simplified CGPA calculation
-      setCalculatedCGPA(cgpa);
+    // Calculate CGPA
+    const fy = Number(fyCgpa) || 0;
+    const sem3 = Number(sem3Sgpa) || 0;
+    
+    if (fy > 0 && sem3 > 0) {
+      const overall = ((fy * 44) + (sem3 * 20) + (sgpa * 20)) / 84;
+      setCalculatedCGPA(overall);
+    } else {
+      setCalculatedCGPA(null);
     }
   };
 
-  const allMarksEntered = subjectGrades.every(sg => sg.predicted_marks > 0);
+  const allMarksEntered = 
+    theorySubjects.every(t => theoryMarks[t.id]?.cie !== undefined && theoryMarks[t.id]?.ete !== undefined) &&
+    practicalSubjects.every(p => practicalMarks[p.id] !== undefined);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-4">
@@ -87,15 +126,14 @@ export function SGPAPredictor() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">SGPA/CGPA Predictor</h1>
-              <p className="text-sm text-gray-600">Calculate your predicted semester grades</p>
+              <h1 className="text-2xl font-bold text-gray-900">Sem 4 SGPA & CGPA Calculator</h1>
+              <p className="text-sm text-gray-600">Calculate your predicted semester grades based on the new pattern</p>
             </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Info Cards */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader>
@@ -105,19 +143,19 @@ export function SGPAPredictor() {
               <ol className="space-y-2 text-sm">
                 <li className="flex gap-2">
                   <span className="font-semibold text-blue-600">1.</span>
-                  <span>Enter your predicted marks for End Semester exams (out of 100)</span>
+                  <span>Theory marks are out of 100 (CIE 40 + ETE 60)</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold text-blue-600">2.</span>
-                  <span>System calculates grade for each subject</span>
+                  <span>Practical/Term Work marks are out of 50</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold text-blue-600">3.</span>
-                  <span>SGPA is calculated using: ΣSGPA = (Credit × Grade Point) / Total Credits</span>
+                  <span>Formula: GradePoint = Math.ceil((Marks / MaxMarks) * 10)</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold text-blue-600">4.</span>
-                  <span>Enter previous semester SGPA to calculate CGPA</span>
+                  <span>Enter First Year CGPA and Sem 3 SGPA for overall CGPA tracking</span>
                 </li>
               </ol>
             </CardContent>
@@ -129,34 +167,13 @@ export function SGPAPredictor() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <Badge>O (10)</Badge>
-                  <span className="text-gray-600">90-100%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge>A+ (9)</Badge>
-                  <span className="text-gray-600">80-89%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge>A (8)</Badge>
-                  <span className="text-gray-600">70-79%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge>B+ (7)</Badge>
-                  <span className="text-gray-600">60-69%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge>B (6)</Badge>
-                  <span className="text-gray-600">50-59%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge>P (5)</Badge>
-                  <span className="text-gray-600">40-49%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="destructive">F (0)</Badge>
-                  <span className="text-gray-600">Below 40%</span>
-                </div>
+                <div className="flex items-center gap-2"><Badge>O (10)</Badge></div>
+                <div className="flex items-center gap-2"><Badge>A+ (9)</Badge></div>
+                <div className="flex items-center gap-2"><Badge>A (8)</Badge></div>
+                <div className="flex items-center gap-2"><Badge>B+ (7)</Badge></div>
+                <div className="flex items-center gap-2"><Badge>B (6)</Badge></div>
+                <div className="flex items-center gap-2"><Badge>P (5)</Badge></div>
+                <div className="flex items-center gap-2 col-span-2"><Badge variant="destructive">F (Fail)</Badge></div>
               </div>
             </CardContent>
           </Card>
@@ -165,179 +182,169 @@ export function SGPAPredictor() {
         {/* Marks Entry */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Enter Predicted End Semester Marks</CardTitle>
-            <CardDescription>Enter expected marks out of 100 for each subject</CardDescription>
+            <CardTitle>Theory Subjects</CardTitle>
+            <CardDescription>Enter CIE out of 40 and ETE out of 60</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {subjects.map((subject) => {
-                const sg = subjectGrades.find(s => s.subject_id === subject.subject_id);
-                return (
-                  <div key={subject.subject_id} className="grid md:grid-cols-5 gap-4 items-end p-4 bg-gray-50 rounded-lg">
-                    <div className="md:col-span-2">
-                      <Label>{subject.subject_name}</Label>
-                      <p className="text-xs text-gray-600">Credits: {subject.credits}</p>
-                    </div>
-                    <div>
-                      <Label htmlFor={`marks-${subject.subject_id}`}>Predicted Marks</Label>
-                      <Input
-                        id={`marks-${subject.subject_id}`}
-                        type="number"
-                        min="0"
-                        max="100"
-                        placeholder="0-100"
-                        value={sg?.predicted_marks || ''}
-                        onChange={(e) => handleMarksChange(subject.subject_id, parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div>
-                      <Label>Grade</Label>
-                      <div className="h-10 flex items-center">
-                        {sg?.grade && (
-                          <Badge variant={sg.grade === 'F' ? 'destructive' : 'default'}>
-                            {sg.grade}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Grade Point</Label>
-                      <div className="h-10 flex items-center">
-                        <span className="text-lg font-semibold text-blue-600">
-                          {sg?.grade_point || 0}
-                        </span>
-                      </div>
-                    </div>
+              {theorySubjects.map((subject) => (
+                <div key={subject.id} className="grid md:grid-cols-4 gap-4 items-end p-4 bg-gray-50 rounded-lg">
+                  <div className="md:col-span-2">
+                    <Label>{subject.name}</Label>
+                    <p className="text-xs text-gray-600">Credits: {subject.credits}</p>
                   </div>
-                );
-              })}
+                  <div>
+                    <Label>CIE (Max 40)</Label>
+                    <Input
+                      type="number"
+                      min="0" max="40" placeholder="0-40"
+                      value={theoryMarks[subject.id]?.cie ?? ''}
+                      onChange={(e) => handleTheoryChange(subject.id, 'cie', parseFloat(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label>ETE (Max 60)</Label>
+                    <Input
+                      type="number"
+                      min="0" max="60" placeholder="0-60"
+                      value={theoryMarks[subject.id]?.ete ?? ''}
+                      onChange={(e) => handleTheoryChange(subject.id, 'ete', parseFloat(e.target.value))}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Previous SGPA Input */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Previous Semester SGPA (Optional)</CardTitle>
-            <CardDescription>Enter your previous semester SGPA to calculate CGPA</CardDescription>
+            <CardTitle>Practicals / Term Work</CardTitle>
+            <CardDescription>Enter marks out of 50</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="max-w-xs">
-              <Label htmlFor="previous-sgpa">Previous SGPA</Label>
-              <Input
-                id="previous-sgpa"
-                type="number"
-                min="0"
-                max="10"
-                step="0.01"
-                placeholder="0.00 - 10.00"
-                value={previousSGPA}
-                onChange={(e) => setPreviousSGPA(e.target.value)}
-              />
+            <div className="space-y-4">
+              {practicalSubjects.map((subject) => (
+                <div key={subject.id} className="grid md:grid-cols-4 gap-4 items-end p-4 bg-gray-50 rounded-lg">
+                  <div className="md:col-span-3">
+                    <Label>{subject.name}</Label>
+                    <p className="text-xs text-gray-600">Credits: {subject.credits}</p>
+                  </div>
+                  <div>
+                    <Label>Marks (Max 50)</Label>
+                    <Input
+                      type="number"
+                      min="0" max="50" placeholder="0-50"
+                      value={practicalMarks[subject.id] ?? ''}
+                      onChange={(e) => handlePracticalChange(subject.id, parseFloat(e.target.value))}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Calculate Button */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Previous Results (Optional)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label>First Year CGPA</Label>
+                <Input type="number" step="0.01" placeholder="e.g 8.5" value={fyCgpa} onChange={(e) => setFyCgpa(e.target.value)} />
+              </div>
+              <div>
+                <Label>Sem 3 SGPA</Label>
+                <Input type="number" step="0.01" placeholder="e.g 8.2" value={sem3Sgpa} onChange={(e) => setSem3Sgpa(e.target.value)} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="mb-6">
-          <Button
-            onClick={calculateSGPA}
-            disabled={!allMarksEntered}
-            size="lg"
-            className="w-full md:w-auto"
-          >
+          <Button onClick={calculateSGPA} size="lg" className="w-full md:w-auto">
             <Calculator className="mr-2 h-5 w-5" />
-            Calculate SGPA/CGPA
+            Calculate Final Output
           </Button>
         </div>
 
-        {/* Results */}
         {calculatedSGPA !== null && (
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-              <CardHeader>
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-5 w-5" />
-                  <CardDescription className="text-blue-100">Predicted SGPA</CardDescription>
-                </div>
-                <CardTitle className="text-5xl">{calculatedSGPA.toFixed(2)}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-blue-100">Semester Grade Point Average</p>
-              </CardContent>
-            </Card>
-
-            {calculatedCGPA !== null && (
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+          <>
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="h-5 w-5" />
-                    <CardDescription className="text-purple-100">Predicted CGPA</CardDescription>
+                    <CardDescription className="text-blue-100">Semester 4 SGPA</CardDescription>
                   </div>
-                  <CardTitle className="text-5xl">{calculatedCGPA.toFixed(2)}</CardTitle>
+                  <CardTitle className="text-5xl">{calculatedSGPA.toFixed(2)}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-purple-100">Cumulative Grade Point Average</p>
+                  <p className="text-sm text-blue-100">Semester Grade Point Average</p>
                 </CardContent>
               </Card>
-            )}
-          </div>
-        )}
 
-        {/* Subject-wise Breakdown */}
-        {calculatedSGPA !== null && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Subject-wise Grade Breakdown</CardTitle>
-              <CardDescription>Detailed analysis of your predicted performance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {subjects.map((subject) => {
-                  const sg = subjectGrades.find(s => s.subject_id === subject.subject_id);
-                  return (
-                    <div key={subject.subject_id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              {calculatedCGPA !== null && (
+                <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                  <CardHeader>
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-5 w-5" />
+                      <CardDescription className="text-purple-100">Overall CGPA</CardDescription>
+                    </div>
+                    <CardTitle className="text-5xl">{calculatedCGPA.toFixed(2)}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-purple-100">Cumulative Grade Point Average</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Subject-wise Grade Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {resultsData.map((res: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                       <div className="flex-1">
-                        <p className="font-semibold">{subject.subject_name}</p>
-                        <p className="text-sm text-gray-600">Credits: {subject.credits}</p>
+                        <p className="font-semibold">{res.name}</p>
+                        <p className="text-sm text-gray-600">Credits: {res.credits}</p>
                       </div>
                       <div className="text-center px-4">
-                        <p className="text-2xl font-bold">{sg?.predicted_marks}</p>
-                        <p className="text-xs text-gray-600">Marks</p>
+                        <p className="text-xl font-bold">{res.marks}</p>
+                        <p className="text-xs text-gray-600">/{res.maxMarks}</p>
                       </div>
                       <div className="text-center px-4">
-                        <Badge variant={sg?.grade === 'F' ? 'destructive' : 'default'}>
-                          {sg?.grade}
-                        </Badge>
+                        <Badge variant={res.grade === 'F' ? 'destructive' : 'default'}>{res.grade}</Badge>
                       </div>
                       <div className="text-center px-4">
-                        <p className="text-xl font-bold text-blue-600">{sg?.grade_point}</p>
+                        <p className="text-xl font-bold text-blue-600">{res.gp}</p>
                         <p className="text-xs text-gray-600">GP</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-semibold">
-                          {((sg?.grade_point || 0) * subject.credits).toFixed(2)}
-                        </p>
+                        <p className="text-lg font-semibold">{(res.gp * res.credits).toFixed(2)}</p>
                         <p className="text-xs text-gray-600">Weighted</p>
                       </div>
                     </div>
-                  );
-                })}
-                
-                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-                  <div>
-                    <p className="font-bold text-lg">Total</p>
-                    <p className="text-sm text-gray-600">Total Credits: {subjects.reduce((sum, s) => sum + s.credits, 0)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-600">
-                      SGPA: {calculatedSGPA.toFixed(2)}
-                    </p>
+                  ))}
+                  
+                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border-2 border-blue-200 mt-4">
+                    <div>
+                      <p className="font-bold text-lg">Total</p>
+                      <p className="text-sm text-gray-600">Credits: 20</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-blue-600">SGPA: {calculatedSGPA.toFixed(2)}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
     </div>

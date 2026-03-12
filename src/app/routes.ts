@@ -9,6 +9,8 @@ import { SGPAPredictor } from "./pages/SGPAPredictor";
 import { Grievances } from "./pages/Grievances";
 import { AcademicCalendar } from "./pages/AcademicCalendar";
 import { NotFound } from "./pages/NotFound";
+import { StudentAnalytics } from "./pages/StudentAnalytics";
+import { StudentReports } from "./pages/StudentReports";
 
 export const router = createBrowserRouter([
   {
@@ -34,6 +36,14 @@ export const router = createBrowserRouter([
   {
     path: "/reports",
     Component: ReportCards,
+  },
+  {
+    path: "/student-analytics",
+    Component: StudentAnalytics,
+  },
+  {
+    path: "/student-reports",
+    Component: StudentReports,
   },
   {
     path: "/sgpa-predictor",

@@ -79,7 +79,7 @@ export function StudentDashboard() {
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card className="hover:shadow-lg transition-shadow">
-            <Link to="/reports">
+            <Link to="/student-reports">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="bg-blue-100 p-3 rounded-lg">
@@ -179,7 +179,7 @@ export function StudentDashboard() {
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow">
-            <Link to="/analytics">
+            <Link to="/student-analytics">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="bg-orange-100 p-3 rounded-lg">
@@ -208,29 +208,37 @@ export function StudentDashboard() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Subject-wise Performance</CardTitle>
-            <CardDescription>Unit Test 1 Results</CardDescription>
+            <CardDescription>Semester 4 - Recent Results</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {studentMarks.map((mark) => {
-                const subject = subjects.find(s => s.subject_id === mark.subject_id);
-                const percentage = (mark.marks / mark.max_marks) * 100;
-                const grade = calculateGrade(percentage);
+              {[
+                { name: 'Database Management Systems', type: 'Theory', marks: 80, max: 100, gp: 8, grade: 'A', credits: 3 },
+                { name: 'Principles of Programming Languages', type: 'Theory', marks: 70, max: 100, gp: 7, grade: 'B+', credits: 3 },
+                { name: 'Software Engineering', type: 'Theory', marks: 85, max: 100, gp: 9, grade: 'A+', credits: 3 },
+                { name: 'Open Elective', type: 'Theory', marks: 75, max: 100, gp: 8, grade: 'A', credits: 3 },
+                { name: 'DBMS Lab', type: 'Practical', marks: 42, max: 50, gp: 9, grade: 'A+', credits: 1 },
+                { name: 'PPL Lab', type: 'Practical', marks: 38, max: 50, gp: 8, grade: 'A', credits: 1 },
+                { name: 'Web Technology', type: 'Practical', marks: 45, max: 50, gp: 9, grade: 'A+', credits: 2 },
+                { name: 'Operating Systems Workshop', type: 'Practical', marks: 40, max: 50, gp: 8, grade: 'A', credits: 2 },
+                { name: 'PCPD', type: 'Practical', marks: 48, max: 50, gp: 10, grade: 'O', credits: 2 }
+              ].map((subject, idx) => {
+                const percentage = (subject.marks / subject.max) * 100;
                 
                 return (
-                  <div key={mark.mark_id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div key={idx} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">{subject?.subject_name}</h4>
-                        <Badge variant={percentage >= 80 ? "default" : percentage >= 60 ? "secondary" : "outline"}>
-                          {grade}
+                        <h4 className="font-semibold">{subject.name}</h4>
+                        <Badge variant={subject.grade === 'O' || subject.grade.startsWith('A') ? "default" : subject.grade.startsWith('B') ? "secondary" : "outline"}>
+                          {subject.grade}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-600">Credits: {subject?.credits}</p>
+                      <p className="text-sm text-gray-600">Credits: {subject.credits} • {subject.type}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold">{mark.marks}</p>
-                      <p className="text-sm text-gray-600">out of {mark.max_marks}</p>
+                      <p className="text-2xl font-bold">{subject.marks}</p>
+                      <p className="text-sm text-gray-600">out of {subject.max}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xl font-semibold text-blue-600">{percentage.toFixed(1)}%</p>

@@ -16,6 +16,7 @@ export function UploadMarks() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [generatedFileUrl, setGeneratedFileUrl] = useState("");
+  const [generatedFileId, setGeneratedFileId] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -73,6 +74,7 @@ export function UploadMarks() {
            
            if (jsonResponse.status === 'success') {
              setGeneratedFileUrl(jsonResponse.fileUrl || "");
+             setGeneratedFileId(jsonResponse.fileId || "");
              setUploadProgress(100);
              setUploadStatus("success");
            } else {
@@ -225,18 +227,18 @@ export function UploadMarks() {
                     Open Analysis Sheet
                   </Button>
                 )}
-                <Link to="/analytics" className="flex-1">
+                <a href={`/analytics?sheetId=${generatedFileId}`} target="_blank" rel="noopener noreferrer" className="flex-1">
                   <Button variant="outline" className="w-full border-purple-200 hover:bg-purple-50 hover:text-purple-700">
                     <AlertCircle className="mr-2 h-4 w-4" /> {/* Replacing BarChart placeholder */}
                     View Analytics
                   </Button>
-                </Link>
-                <Link to="/reports" className="flex-1">
+                </a>
+                <a href={`/reports?sheetId=${generatedFileId}`} target="_blank" rel="noopener noreferrer" className="flex-1">
                   <Button variant="outline" className="w-full border-blue-200 hover:bg-blue-50 hover:text-blue-700">
                     <FileSpreadsheet className="mr-2 h-4 w-4" /> {/* Replacing FileText placeholder */}
                     Manage Reports
                   </Button>
-                </Link>
+                </a>
               </div>
 
               <div className="pt-4 border-t">
