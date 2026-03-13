@@ -1,82 +1,43 @@
-@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --font-size: 17px; /* Increased font scale slightly for readability */
-  --background: #f8f9fa; /* Slightly softer bootstrap-like background */
-  --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --popover: #ffffff;
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #0d6efd; /* Bootstrap primary blue */
-  --primary-foreground: #ffffff;
-  --secondary: #e9ecef;
-  --secondary-foreground: #212529;
-  --muted: #f8f9fa;
-  --muted-foreground: #6c757d;
-  --accent: #e9ecef;
-  --accent-foreground: #212529;
-  --destructive: #dc3545; /* Bootstrap danger */
-  --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.125);
-  --input: rgba(0, 0, 0, 0.125);
-  --input-background: #ffffff;
-  --switch-background: #cbced4;
+  --font-size: 17px;
+  --background: #EEF2F8;
+  --foreground: #000000;
+  --card: #F6F8FB;
+  --card-foreground: #000000;
+  --popover: #FFFFFF;
+  --popover-foreground: #000000;
+  --primary: #13518e;
+  --primary-foreground: #FFFFFF;
+  --secondary: #88BDF2;
+  --secondary-foreground: #000000;
+  --muted: #BDDDFC;
+  --muted-foreground: #384959;
+  --accent: #505081;
+  --accent-foreground: #FFFFFF;
+  --destructive: #CD1C18;
+  --destructive-foreground: #FFFFFF;
+  --border: #70adea;
+  --input: #BDDDFC;
+  --input-background: #FFFFFF;
+  --switch-background: #88BDF2;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: rgba(13, 110, 253, 0.25);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 1rem; /* More rounded, softer aesthetic */
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #0d6efd;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: #121212; /* Softer dark background */
-  --foreground: #e9ecef; /* Soft light text */
-  --card: #1e1e1e;
-  --card-foreground: #e9ecef;
-  --popover: #1e1e1e;
-  --popover-foreground: #e9ecef;
-  --primary: #0d6efd; /* Bootstrap primary */
-  --primary-foreground: #ffffff;
-  --secondary: #2b2b2b;
-  --secondary-foreground: #e9ecef;
-  --muted: #2b2b2b;
-  --muted-foreground: #adb5bd;
-  --accent: #2b2b2b;
-  --accent-foreground: #e9ecef;
-  --destructive: #dc3545; /* Bootstrap danger */
-  --destructive-foreground: #ffffff;
-  --border: #343a40;
-  --input: #343a40;
-  --input-background: #1e1e1e;
-  --ring: rgba(13, 110, 253, 0.25);
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: #0d6efd;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --ring: rgba(106, 137, 167, 0.35);
+  --chart-1: #384959;
+  --chart-2: #272757;
+  --chart-3: #8686AC;
+  --chart-4: #505081;
+  --chart-5: #0F0E47;
+  --radius: 1.7rem;
+  --sidebar: #F6F8FB;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #6A89A7;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #BDDDFC;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #BDDDFC;
+  --sidebar-ring: #6A89A7;
 }
 
 @theme inline {
@@ -110,7 +71,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -119,11 +79,9 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-
-  /* Making shadows softer like Bootstrap */
-  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 @layer base {
@@ -132,69 +90,47 @@
   }
 
   body {
-    @apply bg-background text-foreground tracking-wide;
+    @apply bg-background text-foreground;
+    font-family: 'Inter', Arial, system-ui, sans-serif;
   }
 
   html {
     font-size: var(--font-size);
   }
 
-  h1 {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  h2 {
-    font-size: var(--text-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  h3 {
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  h4 {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  label {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  button {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
-  }
-
-  input {
-    font-size: var(--text-base);
-    font-weight: var(--font-weight-normal);
-    line-height: 1.5;
-  }
-
-  /* Print specific utilities */
   @media print {
     body {
       background: white !important;
       color: black !important;
+      font-size: 12px !important;
     }
-    .print-hide {
+
+    header, nav, .print-hide, button, [data-radix-popper-content-wrapper] {
       display: none !important;
     }
+
     .print-show {
       display: block !important;
     }
-    .print-card-break {
-      page-break-inside: avoid;
+
+    main {
+      max-width: 100% !important;
+      padding: 0 !important;
+    }
+
+    table {
+      font-size: 11px !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    html {
+      font-size: 15px;
+    }
+
+    main {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
     }
   }
 }

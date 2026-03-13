@@ -2,8 +2,7 @@ import { Link } from "react-router";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { ModeToggle } from "../components/mode-toggle";
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, AreaChart, Area
 } from "recharts";
@@ -13,7 +12,7 @@ const staticSubjectsData = [
   { name: 'PPL', full: 'Principles of Programming', type: 'Theory', marks: 70, max: 100, classAvg: 68 },
   { name: 'SE', full: 'Software Engineering', type: 'Theory', marks: 85, max: 100, classAvg: 75 },
   { name: 'OE', full: 'Open Elective', type: 'Theory', marks: 75, max: 100, classAvg: 78 },
-  { name: 'DBMS L', full: 'DBMS Lab', type: 'Practical', marks: 84, max: 100, classAvg: 80 }, // normalized to 100
+  { name: 'DBMS L', full: 'DBMS Lab', type: 'Practical', marks: 84, max: 100, classAvg: 80 },
   { name: 'PPL L', full: 'PPL Lab', type: 'Practical', marks: 76, max: 100, classAvg: 75 },
   { name: 'WT', full: 'Web Technology', type: 'Practical', marks: 90, max: 100, classAvg: 85 },
   { name: 'OS', full: 'Operating Systems', type: 'Practical', marks: 80, max: 100, classAvg: 82 },
@@ -29,120 +28,88 @@ const historicalTrend = [
 
 export function StudentAnalytics() {
   return (
-    <div className="min-h-screen bg-muted/30 dark:bg-background">
-      <header className="bg-card shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/student">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/student"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Performance Analytics</h1>
-              <p className="text-sm text-muted-foreground">Visual breakdown of your academic journey</p>
+              <h1 className="text-xl font-semibold">Performance Analytics</h1>
+              <p className="text-sm text-muted-foreground">Academic progress overview</p>
             </div>
           </div>
-          <ModeToggle />
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800/50 shadow-sm">
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <Card className="border">
             <CardHeader className="pb-2">
-              <CardDescription className="text-blue-700 dark:text-blue-300 font-medium">Current CGPA</CardDescription>
-              <CardTitle className="text-4xl text-blue-900 dark:text-blue-100">8.25</CardTitle>
+              <CardDescription>CGPA</CardDescription>
+              <CardTitle className="text-3xl">8.25</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center mt-2">
-                <TrendingUp className="h-4 w-4 mr-1"/> +0.10 from last sem
-              </p>
-            </CardContent>
+            <CardContent><p className="text-sm text-muted-foreground flex items-center"><TrendingUp className="h-3 w-3 mr-1" /> +0.10</p></CardContent>
           </Card>
-          <Card className="bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/50 shadow-sm">
+          <Card className="border">
             <CardHeader className="pb-2">
-              <CardDescription className="text-emerald-700 dark:text-emerald-300 font-medium">Rank in Class</CardDescription>
-              <CardTitle className="text-4xl text-emerald-900 dark:text-emerald-100">12<span className="text-2xl text-emerald-700/60 dark:text-emerald-300/60">/60</span></CardTitle>
+              <CardDescription>Rank</CardDescription>
+              <CardTitle className="text-3xl">12<span className="text-lg text-muted-foreground">/60</span></CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center mt-2 font-medium">
-                Top 20%
-              </p>
-            </CardContent>
+            <CardContent><p className="text-sm text-muted-foreground">Top 20%</p></CardContent>
           </Card>
-          <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800/50 shadow-sm">
+          <Card className="border">
             <CardHeader className="pb-2">
-              <CardDescription className="text-purple-700 dark:text-purple-300 font-medium">Strongest Subject</CardDescription>
-              <CardTitle className="text-2xl text-purple-900 dark:text-purple-100 truncate">PCPD</CardTitle>
+              <CardDescription>Best Subject</CardDescription>
+              <CardTitle className="text-xl">PCPD</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-purple-600 dark:text-purple-400 mt-2">
-                Grade: O (10 GP)
-              </p>
-            </CardContent>
+            <CardContent><p className="text-sm text-muted-foreground">O (10 GP)</p></CardContent>
           </Card>
-          <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/50 shadow-sm">
+          <Card className="border">
             <CardHeader className="pb-2">
-              <CardDescription className="text-amber-700 dark:text-amber-300 font-medium">Needs Attention</CardDescription>
-              <CardTitle className="text-2xl text-amber-900 dark:text-amber-100 truncate">PPL</CardTitle>
+              <CardDescription>Needs Work</CardDescription>
+              <CardTitle className="text-xl">PPL</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
-                Grade: B+ (7 GP)
-              </p>
-            </CardContent>
+            <CardContent><p className="text-sm text-muted-foreground">B+ (7 GP)</p></CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Marks vs Class Average (Bar) */}
-          <Card className="shadow-sm">
+        <div className="grid lg:grid-cols-2 gap-5 mb-6">
+          <Card className="border">
             <CardHeader>
-              <CardTitle>Subject Performance vs Class Average</CardTitle>
-              <CardDescription>Normalized out of 100 for comparison</CardDescription>
+              <CardTitle className="text-base">Marks vs Class Average</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={staticSubjectsData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                  <BarChart data={staticSubjectsData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} />
                     <YAxis axisLine={false} tickLine={false} domain={[0, 100]} />
-                    <RechartsTooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Legend wrapperStyle={{paddingTop: '20px'}} />
-                    <Bar dataKey="marks" name="Your Marks (%)" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={20} />
-                    <Bar dataKey="classAvg" name="Class Avg (%)" fill="#cbd5e1" radius={[4, 4, 0, 0]} barSize={20} />
+                    <RechartsTooltip />
+                    <Legend />
+                    <Bar dataKey="marks" name="You" fill="var(--primary)" radius={[3, 3, 0, 0]} barSize={16} />
+                    <Bar dataKey="classAvg" name="Class Avg" fill="var(--border)" radius={[3, 3, 0, 0]} barSize={16} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
-          {/* SGPA/CGPA Historical Trend (Area/Line) */}
-          <Card className="shadow-sm">
+          <Card className="border">
             <CardHeader>
-              <CardTitle>Historical Academic Trend</CardTitle>
-              <CardDescription>SGPA and CGPA progression across semesters</CardDescription>
+              <CardTitle className="text-base">SGPA / CGPA Trend</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={historicalTrend} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorSgpa" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
+                  <AreaChart data={historicalTrend} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="semester" axisLine={false} tickLine={false} />
+                    <XAxis dataKey="semester" axisLine={false} tickLine={false} fontSize={12} />
                     <YAxis axisLine={false} tickLine={false} domain={['dataMin - 0.5', 10]} />
-                    <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Legend wrapperStyle={{paddingTop: '10px'}} />
-                    <Area type="monotone" dataKey="sgpa" name="SGPA" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorSgpa)" />
-                    <Line type="monotone" dataKey="cgpa" name="CGPA" stroke="#10b981" strokeWidth={3} dot={{r: 4}} />
+                    <RechartsTooltip />
+                    <Legend />
+                    <Area type="monotone" dataKey="sgpa" name="SGPA" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.1} strokeWidth={2} />
+                    <Line type="monotone" dataKey="cgpa" name="CGPA" stroke="var(--chart-2)" strokeWidth={2} dot={{ r: 3 }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -150,21 +117,19 @@ export function StudentAnalytics() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Skill Radar */}
-          <Card className="shadow-sm lg:col-span-1">
+        <div className="grid lg:grid-cols-3 gap-5">
+          <Card className="border">
             <CardHeader>
-              <CardTitle>Skill Matrix</CardTitle>
-              <CardDescription>Strength in different domains</CardDescription>
+              <CardTitle className="text-base">Skill Radar</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
+              <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart cx="50%" cy="50%" outerRadius="70%" data={staticSubjectsData.filter(s => s.type === 'Theory')}>
-                    <PolarGrid stroke="#e2e8f0" />
-                    <PolarAngleAxis dataKey="name" tick={{fill: '#64748b', fontSize: 12}} />
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 11 }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar name="Student" dataKey="marks" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.5} />
+                    <Radar name="Score" dataKey="marks" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.3} />
                     <RechartsTooltip />
                   </RadarChart>
                 </ResponsiveContainer>
@@ -172,35 +137,28 @@ export function StudentAnalytics() {
             </CardContent>
           </Card>
 
-          {/* Detailed Performance Table */}
-          <Card className="shadow-sm lg:col-span-2">
+          <Card className="border lg:col-span-2">
             <CardHeader>
-              <CardTitle>Subject Mastery</CardTitle>
-              <CardDescription>Detailed breakdown of your individual subject strengths</CardDescription>
+              <CardTitle className="text-base">Subject Mastery</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {staticSubjectsData.slice(0, 5).map((sub, idx) => (
                   <div key={idx} className="flex items-center">
-                    <div className="w-32 truncate font-medium text-sm text-foreground" title={sub.full}>{sub.full}</div>
-                    <div className="flex-1 ml-4">
-                      <div className="w-full bg-muted rounded-full h-2.5">
-                        <div 
-                          className={`h-2.5 rounded-full ${sub.marks >= 85 ? 'bg-emerald-500' : sub.marks >= 75 ? 'bg-blue-500' : 'bg-amber-500'}`} 
-                          style={{ width: `${sub.marks}%` }}
-                        ></div>
+                    <div className="w-28 truncate text-sm font-medium" title={sub.full}>{sub.full}</div>
+                    <div className="flex-1 ml-3">
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="h-2 rounded-full bg-primary" style={{ width: `${sub.marks}%` }}></div>
                       </div>
                     </div>
-                    <div className="w-16 text-right ml-4 text-sm font-semibold text-muted-foreground">{sub.marks}%</div>
+                    <div className="w-12 text-right ml-3 text-sm text-muted-foreground">{sub.marks}%</div>
                   </div>
                 ))}
-                <p className="text-center text-sm text-muted-foreground mt-4 pt-4 border-t border-border">Showing top 5 subjects. Keep up the good work!</p>
               </div>
             </CardContent>
           </Card>
         </div>
-
-      </div>
+      </main>
     </div>
   );
 }

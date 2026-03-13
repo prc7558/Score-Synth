@@ -78,7 +78,7 @@ export const gradeToPoint: { [key: string]: number } = {
 
 // Mock Students Data
 export const students: Student[] = [
-  { student_id: 1, roll_number: 'TE-001', name: 'Parth Chaudhari', email: 'parth@example.com', academic_year: 'TE', division: 'A' },
+  { student_id: 1, roll_number: 'B24CE1050', name: 'Parth Chaudhari', email: 'parth@example.com', academic_year: 'SY', division: 'SY BTech I' },
   { student_id: 2, roll_number: 'TE-002', name: 'Animish Deo', email: 'animish@example.com', academic_year: 'TE', division: 'A' },
   { student_id: 3, roll_number: 'TE-003', name: 'Niraj Fegade', email: 'niraj@example.com', academic_year: 'TE', division: 'A' },
   { student_id: 4, roll_number: 'TE-004', name: 'Khilesh Chaudhari', email: 'khilesh@example.com', academic_year: 'TE', division: 'A' },
@@ -173,7 +173,7 @@ export const marks: Mark[] = [
   
   // Student 10
   { mark_id: 46, student_id: 10, subject_id: 1, exam_id: 1, marks: 41, max_marks: 50 },
-  { mark_id: 47, student_id: 10, subject_id: 2, exam_id: 1, exam_id: 1, marks: 42, max_marks: 50 },
+  { mark_id: 47, student_id: 10, subject_id: 2, exam_id: 1, marks: 42, max_marks: 50 },
   { mark_id: 48, student_id: 10, subject_id: 3, exam_id: 1, marks: 40, max_marks: 50 },
   { mark_id: 49, student_id: 10, subject_id: 4, exam_id: 1, marks: 43, max_marks: 50 },
   { mark_id: 50, student_id: 10, subject_id: 5, exam_id: 1, marks: 41, max_marks: 50 },
@@ -253,13 +253,15 @@ export interface CalendarEvent {
 }
 
 export const calendarEvents: CalendarEvent[] = [
-  { id: 1, title: 'Unit Test 1', date: '2026-02-15', type: 'unit-test', description: 'First unit test for all subjects' },
-  { id: 2, title: 'UT1 Results', date: '2026-02-25', type: 'result', description: 'Unit Test 1 results declaration' },
-  { id: 3, title: 'CIE 1', date: '2026-03-10', type: 'cie', description: 'Continuous Internal Evaluation 1' },
-  { id: 4, title: 'Unit Test 2', date: '2026-03-25', type: 'unit-test', description: 'Second unit test for all subjects' },
-  { id: 5, title: 'UT2 Results', date: '2026-04-05', type: 'result', description: 'Unit Test 2 results declaration' },
-  { id: 6, title: 'CIE 2', date: '2026-04-15', type: 'cie', description: 'Continuous Internal Evaluation 2' },
-  { id: 7, title: 'Term Work Submission', date: '2026-04-20', type: 'other', description: 'Final date for term work submission' },
-  { id: 8, title: 'End Semester Exam', date: '2026-05-05', type: 'end-sem', description: 'End semester examination begins' },
-  { id: 9, title: 'Semester Results', date: '2026-05-25', type: 'result', description: 'Semester results declaration' },
+  { id: 1, title: 'SY B.Tech Semester IV Commencement', date: '2026-01-05', type: 'other', description: 'Commencement of Semester IV for SY B.Tech' },
+  { id: 2, title: 'FY End Term Exam (Regular & Backlog)', date: '2026-02-09', type: 'end-sem', description: 'FY B.Tech, MBA, M.Tech End Term Examination starts' },
+  { id: 3, title: 'First Year B.Tech Conclusion of Sem II', date: '2026-05-07', type: 'result', description: 'Conclusion of Semester II for First Year B.Tech' },
+  { id: 4, title: 'SY B.Tech End Term Exam Start', date: '2026-05-07', type: 'end-sem', description: 'SY B.Tech, MBA, M.Tech End Term Examination (Regular & Backlog ETE) begins' },
+  { id: 5, title: 'T.E. / B.E. Audit II', date: '2026-02-02', type: 'other', description: 'Display of Final Detention List for SY, B.Tech/M.Tech/MBA' },
+  { id: 6, title: 'FY End Term Exam (Regular & Backlog) End', date: '2026-05-23', type: 'end-sem', description: 'FY, SY B.Tech End Term Examination concludes' },
+  { id: 7, title: 'SY B.Tech End Term Exam End', date: '2026-05-18', type: 'end-sem', description: 'SY B.Tech End Term Examination (Regular & Backlog ETE) concludes' },
+  { id: 8, title: 'TE/BE Conclusion of Semester VI/VIII', date: '2026-05-19', type: 'result', description: 'Conclusion of Semester for TE and BE students' },
+  { id: 9, title: 'SY B.Tech Conclusion of Semester IV', date: '2026-04-30', type: 'result', description: 'Second Year B.Tech/M.Tech/MBA Conclusion of Semester IV' },
+  { id: 10, title: 'FY Exam Form Filling for Re-ETE', date: '2026-01-26', type: 'other', description: 'FY B.Tech, M.Tech Exam Form Filling for Re-ETE Start' },
+  { id: 11, title: 'SY B.Tech Result after Re-ETE', date: '2026-02-16', type: 'result', description: 'FY B.Tech, M.Tech Result after Re-ETE' },
 ];

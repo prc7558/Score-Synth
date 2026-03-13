@@ -1,4 +1,3 @@
-import { ModeToggle } from "../components/mode-toggle";
 import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle } from "lucide-react";
@@ -42,11 +41,10 @@ export function UploadMarks() {
 
     setUploadStatus("processing");
     setErrorMessage("");
-    // Start a fake progress while the file uploads
     let progress = 0;
     const interval = setInterval(() => {
       progress += 5;
-      if (progress > 90) progress = 90; // cap at 90% until done
+      if (progress > 90) progress = 90;
       setUploadProgress(progress);
     }, 200);
 
@@ -79,7 +77,6 @@ export function UploadMarks() {
              setUploadProgress(100);
              setUploadStatus("success");
              
-             // Fetch parsed marks from GAS and log to XAMPP formally
              try {
                const gasDataResponse = await fetch(`${gasUrl}?sheetId=${jsonResponse.fileId}`);
                if (gasDataResponse.ok) {
@@ -119,7 +116,6 @@ export function UploadMarks() {
                      }
                    }
 
-                   // Ping XAMPP with full data packet
                    fetch('http://localhost/scoresynth/api.php', {
                      method: 'POST',
                      headers: { 'Content-Type': 'application/json' },
@@ -157,174 +153,99 @@ export function UploadMarks() {
        setUploadStatus("error");
     };
     
-    // Read the file as a data URL (base64)
     reader.readAsDataURL(selectedFile);
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 dark:bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/faculty">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/faculty"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Upload Marks</h1>
+              <h1 className="text-xl font-semibold">Upload Marks</h1>
               <p className="text-sm text-muted-foreground">Process student exam results</p>
             </div>
           </div>
-        <ModeToggle />
-          </div>
+        </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {/* Instructions */}
-          <Card>
+      <main className="max-w-5xl mx-auto px-6 py-8">
+        <div className="grid md:grid-cols-2 gap-5 mb-6">
+          <Card className="border">
             <CardHeader>
-              <CardTitle>Upload Instructions</CardTitle>
-              <CardDescription>Follow these steps to upload marks</CardDescription>
+              <CardTitle className="text-base">Instructions</CardTitle>
             </CardHeader>
             <CardContent>
-              <ol className="space-y-3 text-sm">
-                <li className="flex gap-3">
-                  <span className="font-semibold text-blue-600">1.</span>
-                  <span>Download the Excel template from the Faculty Dashboard</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-semibold text-blue-600">2.</span>
-                  <span>Fill in student marks for all subjects</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-semibold text-blue-600">3.</span>
-                  <span>Verify all data is accurate and complete</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-semibold text-blue-600">4.</span>
-                  <span>Save the file in .xlsx format</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-semibold text-blue-600">5.</span>
-                  <span>Select exam type and academic year</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-semibold text-blue-600">6.</span>
-                  <span>Upload the file using the form</span>
-                </li>
+              <ol className="space-y-2 text-sm text-muted-foreground">
+                <li>1. Download Excel template from Faculty Dashboard</li>
+                <li>2. Fill in student marks for all subjects</li>
+                <li>3. Verify all data is accurate</li>
+                <li>4. Save file in .xlsx format</li>
+                <li>5. Select exam type and year below</li>
+                <li>6. Upload the file</li>
               </ol>
             </CardContent>
           </Card>
 
-          {/* Template Info */}
-          <Card>
+          <Card className="border">
             <CardHeader>
-              <CardTitle>Template Format</CardTitle>
-              <CardDescription>Required columns in Excel</CardDescription>
+              <CardTitle className="text-base">Required Columns</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
-                  <FileSpreadsheet className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="font-medium">Roll Number</p>
-                    <p className="text-xs text-muted-foreground">Student roll number</p>
+              <div className="space-y-2 text-sm">
+                {["Roll Number", "Student Name", "Email ID", "Subject Columns (marks)"].map((col, i) => (
+                  <div key={i} className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg">
+                    <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                    <span>{col}</span>
                   </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
-                  <FileSpreadsheet className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="font-medium">Student Name</p>
-                    <p className="text-xs text-muted-foreground">Full name</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
-                  <FileSpreadsheet className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <p className="font-medium">Email ID</p>
-                    <p className="text-xs text-muted-foreground">For report delivery</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
-                  <FileSpreadsheet className="h-5 w-5 text-orange-600" />
-                  <div>
-                    <p className="font-medium">Subject Columns</p>
-                    <p className="text-xs text-muted-foreground">Marks for each subject</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Upload Form or Success View */}
         {uploadStatus === "success" ? (
-          <Card>
+          <Card className="border">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <CheckCircle className="h-8 w-8 text-green-600" />
+                <CheckCircle className="h-6 w-6 text-green-600" />
                 <div>
-                  <CardTitle>Processing Complete!</CardTitle>
-                  <CardDescription>Marks have been successfully analyzed and saved.</CardDescription>
+                  <CardTitle>Processing Complete</CardTitle>
+                  <CardDescription>Marks have been analyzed and saved</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="bg-green-50 text-green-800 p-4 rounded-lg">
-                <p className="text-sm font-medium">Next Steps Available:</p>
-                <p className="text-sm mt-1">
-                  You can now safely view the Google Sheet, explore the interactive analytics dashboard, or proceed to manage report cards.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4">
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 {generatedFileUrl && (
-                  <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => window.open(generatedFileUrl, "_blank")}>
-                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    Open Analysis Sheet
+                  <Button className="flex-1" onClick={() => window.open(generatedFileUrl, "_blank")}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Open Sheet
                   </Button>
                 )}
                 <a href={`/analytics?sheetId=${generatedFileId}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button variant="outline" className="w-full border-purple-200 hover:bg-purple-50 hover:text-purple-700">
-                    <AlertCircle className="mr-2 h-4 w-4" /> {/* Replacing BarChart placeholder */}
-                    View Analytics
-                  </Button>
+                  <Button variant="outline" className="w-full">View Analytics</Button>
                 </a>
                 <a href={`/reports?sheetId=${generatedFileId}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button variant="outline" className="w-full border-blue-200 hover:bg-blue-50 hover:text-blue-700">
-                    <FileSpreadsheet className="mr-2 h-4 w-4" /> {/* Replacing FileText placeholder */}
-                    Manage Reports
-                  </Button>
+                  <Button variant="outline" className="w-full">Manage Reports</Button>
                 </a>
               </div>
-
-              <div className="pt-4 border-t">
-                 <Button variant="ghost" onClick={() => {
-                   setUploadStatus("idle");
-                   setSelectedFile(null);
-                 }} className="w-full text-muted-foreground">
-                   Upload Another File
-                 </Button>
-              </div>
+              <Button variant="ghost" className="w-full text-muted-foreground" onClick={() => { setUploadStatus("idle"); setSelectedFile(null); }}>
+                Upload Another File
+              </Button>
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="border">
             <CardHeader>
-              <CardTitle>Upload Marks File</CardTitle>
-              <CardDescription>Select exam details and upload the Excel file</CardDescription>
+              <CardTitle>Upload File</CardTitle>
+              <CardDescription>Select exam details and upload Excel</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Exam Type Selection */}
+            <CardContent className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="exam-type">Exam Type</Label>
+                <Label>Exam Type</Label>
                 <Select value={examType} onValueChange={setExamType}>
-                  <SelectTrigger id="exam-type">
-                    <SelectValue placeholder="Select exam type" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select exam type" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unit-test-1">Unit Test 1</SelectItem>
                     <SelectItem value="unit-test-2">Unit Test 2</SelectItem>
@@ -337,13 +258,10 @@ export function UploadMarks() {
                 </Select>
               </div>
 
-              {/* Academic Year Selection */}
               <div className="space-y-2">
-                <Label htmlFor="academic-year">Academic Year</Label>
+                <Label>Academic Year</Label>
                 <Select value={academicYear} onValueChange={setAcademicYear}>
-                  <SelectTrigger id="academic-year">
-                    <SelectValue placeholder="Select academic year" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="FY">First Year (FY)</SelectItem>
                     <SelectItem value="SY">Second Year (SY)</SelectItem>
@@ -353,30 +271,25 @@ export function UploadMarks() {
                 </Select>
               </div>
 
-              {/* File Upload */}
               <div className="space-y-2">
-                <Label htmlFor="file-upload">Excel File</Label>
-                <div className="flex items-center gap-4">
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleFileChange}
-                    className="flex-1 text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                </div>
+                <Label>Excel File</Label>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileChange}
+                  className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-muted file:text-foreground"
+                />
                 {selectedFile && (
                   <p className="text-sm text-muted-foreground">
-                    Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                    {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
                   </p>
                 )}
               </div>
 
-              {/* Upload Progress */}
               {uploadStatus === "processing" && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Processing file...</span>
+                    <span>Processing...</span>
                     <span>{uploadProgress}%</span>
                   </div>
                   <Progress value={uploadProgress} />
@@ -384,91 +297,47 @@ export function UploadMarks() {
               )}
 
               {uploadStatus === "error" && (
-                <Alert className="border-red-200 bg-red-50">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertTitle className="text-red-800">Upload Failed</AlertTitle>
-                  <AlertDescription className="text-red-700">
-                    {errorMessage || "Please ensure all fields are filled and a valid Excel file is selected."}
-                  </AlertDescription>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Upload Failed</AlertTitle>
+                  <AlertDescription>{errorMessage || "Please check all fields and try again."}</AlertDescription>
                 </Alert>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                <Button
-                  onClick={handleUpload}
-                  disabled={!selectedFile || !examType || !academicYear || uploadStatus === "processing"}
-                  className="flex-1"
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload and Process
+              <div className="flex gap-3">
+                <Button onClick={handleUpload} disabled={!selectedFile || !examType || !academicYear || uploadStatus === "processing"} className="flex-1">
+                  <Upload className="mr-2 h-4 w-4" /> Upload
                 </Button>
                 <Link to="/faculty" className="flex-1">
-                  <Button variant="outline" className="w-full">
-                    Cancel
-                  </Button>
+                  <Button variant="outline" className="w-full">Cancel</Button>
                 </Link>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Processing Info */}
-        <Card className="mt-6">
+        <Card className="border mt-5">
           <CardHeader>
-            <CardTitle>What Happens After Upload?</CardTitle>
+            <CardTitle className="text-base">After Upload</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  1
+            <div className="space-y-2 text-sm">
+              {[
+                "File is validated for format and integrity",
+                "Totals, percentages, grades, and ranks are calculated",
+                "Data is stored in the database",
+                "PDF report cards are generated",
+                "Reports are emailed to students"
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="bg-muted text-muted-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">{i + 1}</span>
+                  <span className="text-muted-foreground">{step}</span>
                 </div>
-                <div>
-                  <p className="font-medium">File Validation</p>
-                  <p className="text-muted-foreground">Excel file is validated for format and data integrity</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  2
-                </div>
-                <div>
-                  <p className="font-medium">Result Calculation</p>
-                  <p className="text-muted-foreground">Total marks, percentage, grades, and ranks are calculated</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  3
-                </div>
-                <div>
-                  <p className="font-medium">Database Storage</p>
-                  <p className="text-muted-foreground">All data is securely stored in the database</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  4
-                </div>
-                <div>
-                  <p className="font-medium">Report Generation</p>
-                  <p className="text-muted-foreground">PDF report cards are generated for each student</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 text-blue-600 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  5
-                </div>
-                <div>
-                  <p className="font-medium">Email Distribution</p>
-                  <p className="text-muted-foreground">Report cards are automatically sent to student email addresses</p>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

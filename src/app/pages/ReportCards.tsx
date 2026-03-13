@@ -1,13 +1,14 @@
-import { ModeToggle } from "../components/mode-toggle";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router";
-import { ArrowLeft, Download, Mail, Search, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Mail, Search, AlertCircle, Loader2, Printer } from "lucide-react";
+import JSZip from "jszip";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Progress } from "../components/ui/progress";
 import { toast } from "sonner";
 
 interface StudentReport {
@@ -25,186 +26,212 @@ interface StudentReport {
 export function ReportCards() {
   const [searchParams] = useSearchParams();
   const sheetId = searchParams.get("sheetId");
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Data State
   const [reportData, setReportData] = useState<StudentReport[]>([]);
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [examTypeInfo, setExamTypeInfo] = useState("Not specified in sheet");
+  const [emailProgress, setEmailProgress] = useState(0);
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const [downloadingAll, setDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [examTypeInfo, setExamTypeInfo] = useState("Not specified");
 
   useEffect(() => {
     async function fetchData() {
-      if (!sheetId) {
-        setError("No Google Sheet ID provided in the URL.");
-        setLoading(false);
-        return;
-      }
-
+      if (!sheetId) { setError("No Google Sheet ID provided."); setLoading(false); return; }
       const gasUrl = import.meta.env.VITE_GAS_WEB_APP_URL;
-      if (!gasUrl) {
-        setError("Missing VITE_GAS_WEB_APP_URL configuration.");
-        setLoading(false);
-        return;
-      }
+      if (!gasUrl) { setError("Missing VITE_GAS_WEB_APP_URL."); setLoading(false); return; }
 
       try {
-        const fetchUrl = `${gasUrl}?sheetId=${sheetId}`;
-        const response = await fetch(fetchUrl);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch data: ${response.status}`);
-        }
-
+        const response = await fetch(`${gasUrl}?sheetId=${sheetId}`);
+        if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
         const json = await response.json();
-
-        if (json.status !== "success") {
-          throw new Error(json.message || "Unknown error from Google Apps Script.");
-        }
-
+        if (json.status !== "success") throw new Error(json.message || "Error from GAS.");
         parseSheetData(json.data);
       } catch (err: any) {
-        console.error("Error fetching report cards:", err);
-        setError(err.message || "Failed to load report cards.");
+        console.error("Error fetching reports:", err);
+        setError(err.message || "Failed to load.");
       } finally {
         setLoading(false);
       }
     }
-
     fetchData();
   }, [sheetId]);
 
   const parseSheetData = (fullData: any[][]) => {
     try {
-      const headerRowIdx = 10; // Row 11
-      const dataStartIdx = 11; // Row 12
+      const headerRowIdx = 10;
+      const dataStartIdx = 11;
+      if (fullData.length <= dataStartIdx) throw new Error("No data in sheet.");
 
-      if (fullData.length <= dataStartIdx) throw new Error("Sheet contains no record data.");
-
-      // Try to extract some global Exam Type info from cell C3 if it exists in standard template
-      if (fullData[2] && fullData[2][2]) {
-        setExamTypeInfo(fullData[2][2].toString());
-      }
+      if (fullData[2] && fullData[2][2]) setExamTypeInfo(fullData[2][2].toString());
 
       const headers = fullData[headerRowIdx];
-
-      // Identify bounds
-      let subjectStartIndex = 3; // Col D (index 3)
+      let subjectStartIndex = 3;
       let emailIdx = headers.findIndex(h => typeof h === 'string' && h.toLowerCase().includes("email"));
       let subjectEndIndex = emailIdx === -1 ? headers.length : emailIdx;
       const numSubjects = subjectEndIndex - subjectStartIndex;
-      const totalMaxMarks = numSubjects * 16; // 4 subjects * 16 marks = 64
+      const totalMaxMarks = numSubjects * 16;
 
-      // Calc columns
       const calcStartIdx = headers.findIndex(h => h === "Total");
-      if (calcStartIdx === -1) throw new Error("Calculated columns (Total, Percentage) not found in header.");
+      if (calcStartIdx === -1) throw new Error("Calculated columns not found.");
 
       const totalIdx = calcStartIdx;
       const percentageIdx = calcStartIdx + 1;
       const gradeIdx = calcStartIdx + 2;
       const rankIdx = calcStartIdx + 3;
 
-      const parsedReports: StudentReport[] = [];
-
+      const parsed: StudentReport[] = [];
       for (let i = dataStartIdx; i < fullData.length; i++) {
-        if (fullData[i][0] === "") break; // End of records
-
+        if (fullData[i][0] === "") break;
         const row = fullData[i];
         const grade = String(row[gradeIdx]);
-        const passStatus = grade === "F" ? "FAIL" : "PASS";
-
-        parsedReports.push({
+        parsed.push({
           rank: Number(row[rankIdx]) || 0,
           rollNumber: String(row[1]),
           name: String(row[2]),
-          email: emailIdx !== -1 ? String(row[emailIdx]) : "No Email",
+          email: emailIdx !== -1 ? String(row[emailIdx]) : "N/A",
           totalObtained: Number(row[totalIdx]) || 0,
           totalMax: totalMaxMarks,
           percentage: Number(row[percentageIdx]).toFixed(1),
-          grade: grade,
-          passStatus: passStatus
+          grade,
+          passStatus: grade === "F" ? "FAIL" : grade === "ABSENT" ? "ABSENT" : "PASS"
         });
       }
-
-      parsedReports.sort((a, b) => a.rank - b.rank);
-      setReportData(parsedReports);
-
+      parsed.sort((a, b) => a.rank - b.rank);
+      setReportData(parsed);
     } catch (e: any) {
       console.error("Parse error:", e);
-      setError("Failed to parse sheet data. Is the format correct? " + e.message);
+      setError("Parse failed: " + e.message);
     }
   };
 
   const executeSendEmails = async (targetRollNo?: string) => {
     const gasUrl = import.meta.env.VITE_GAS_WEB_APP_URL;
-    if (!gasUrl) {
-      toast.error("GAS URL not configured.");
-      return;
-    }
+    if (!gasUrl) { toast.error("GAS URL not configured."); return; }
 
     setSendingEmail(true);
-    const toastId = toast.loading(targetRollNo ? "Sending individual email..." : "Sending all emails in bulk...");
+    setEmailProgress(0);
+
+    const totalTarget = targetRollNo ? 1 : reportData.length;
+    const interval = setInterval(() => {
+      setEmailProgress(prev => {
+        const next = prev + Math.max(1, Math.floor(90 / totalTarget));
+        return next > 90 ? 90 : next;
+      });
+    }, 800);
 
     try {
-      const payload: any = {
-        action: "sendEmails",
-        sheetId: sheetId
-      };
-      if (targetRollNo) {
-        payload.studentRollNo = targetRollNo;
-      }
+      const payload: any = { action: "sendEmails", sheetId };
+      if (targetRollNo) payload.studentRollNo = targetRollNo;
 
-      const response = await fetch(gasUrl, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-
+      const response = await fetch(gasUrl, { method: "POST", body: JSON.stringify(payload) });
       const json = await response.json();
 
+      clearInterval(interval);
+      setEmailProgress(100);
+
       if (json.status === "success") {
-        toast.success(`Successfully sent ${json.sentCount} email(s)!`, { id: toastId });
+        toast.success(`Sent ${json.sentCount} email(s)!`);
       } else {
-        throw new Error(json.message || "Failed to send emails via GAS.");
+        throw new Error(json.message || "Failed to send.");
       }
     } catch (err: any) {
+      clearInterval(interval);
       console.error("Email error:", err);
-      toast.error(`Email delivery failed: ${err.message}`, { id: toastId });
+      toast.error(`Failed: ${err.message}`);
     } finally {
-      setSendingEmail(false);
+      setTimeout(() => { setSendingEmail(false); setEmailProgress(0); }, 1500);
     }
   };
 
-  const handleEmailReport = (rollNumber: string, studentName: string) => {
-    executeSendEmails(rollNumber);
+  const downloadPDF = async (rollNo: string, name: string) => {
+    const gasUrl = import.meta.env.VITE_GAS_WEB_APP_URL;
+    if (!gasUrl) { toast.error("GAS URL not configured."); return null; }
+
+    setDownloading(rollNo);
+    try {
+      const response = await fetch(gasUrl, {
+        method: "POST",
+        body: JSON.stringify({ action: "downloadPDF", sheetId, studentRollNo: rollNo })
+      });
+      const json = await response.json();
+      if (json.status !== "success" || !json.pdf) throw new Error(json.message || "Failed");
+
+      const byteChars = atob(json.pdf);
+      const byteArray = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${name}_Result.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${name}'s report`);
+      return byteArray;
+    } catch (err: any) {
+      toast.error(`Download failed: ${err.message}`);
+      return null;
+    } finally {
+      setDownloading(null);
+    }
   };
 
-  const handleEmailAll = () => {
-    executeSendEmails();
+  const downloadAllPDFs = async () => {
+    const gasUrl = import.meta.env.VITE_GAS_WEB_APP_URL;
+    if (!gasUrl) { toast.error("GAS URL not configured."); return; }
+
+    setDownloadingAll(true);
+    setDownloadProgress(0);
+    const zip = new JSZip();
+    let completed = 0;
+
+    for (const student of reportData) {
+      try {
+        const response = await fetch(gasUrl, {
+          method: "POST",
+          body: JSON.stringify({ action: "downloadPDF", sheetId, studentRollNo: student.rollNumber })
+        });
+        const json = await response.json();
+        if (json.status === "success" && json.pdf) {
+          const byteChars = atob(json.pdf);
+          const byteArray = new Uint8Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+          zip.file(`${student.name}_Result.pdf`, byteArray);
+        }
+      } catch (e) {
+        console.error(`Failed for ${student.name}:`, e);
+      }
+      completed++;
+      setDownloadProgress(Math.round((completed / reportData.length) * 100));
+    }
+
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "All_Report_Cards.zip";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded ${completed} report cards as ZIP`);
+    setDownloadingAll(false);
+    setDownloadProgress(0);
   };
 
-  const handleDownloadAll = () => {
-    toast.success(`Downloading visual report cards locally is a premium feature currently in development.`);
-  };
-
-  const handleDownloadReport = (studentName: string) => {
-    toast.success(`Downloading PDF report for ${studentName} is in development.`);
-  };
-
-  // Filter 
-  const filteredData = reportData.filter(data =>
-    data.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    data.rollNumber.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredData = reportData.filter(d =>
+    d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.rollNumber.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted/30 dark:bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto" />
-          <h2 className="text-xl font-semibold text-gray-700">Loading Student Reports...</h2>
-          <p className="text-muted-foreground">Fetching live data from Google Sheets.</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Loading reports...</p>
         </div>
       </div>
     );
@@ -212,131 +239,106 @@ export function ReportCards() {
 
   if (error || reportData.length === 0) {
     return (
-      <div className="min-h-screen bg-muted/30 dark:bg-background p-8">
-        <Link to="/faculty" className="mb-6 inline-block">
-          <Button variant="ghost"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-        </Link>
-        <Alert variant="destructive" className="max-w-2xl mx-auto mt-12 bg-card">
-          <AlertCircle className="h-5 w-5" />
-          <AlertTitle>Error Loading Reports</AlertTitle>
-          <AlertDescription>{error || "No student data found."}</AlertDescription>
+      <div className="min-h-screen bg-background p-8">
+        <Link to="/faculty" className="mb-6 inline-block"><Button variant="ghost"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button></Link>
+        <Alert variant="destructive" className="max-w-2xl mx-auto mt-12">
+          <AlertCircle className="h-5 w-5" /><AlertTitle>Error</AlertTitle><AlertDescription>{error || "No data found."}</AlertDescription>
         </Alert>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 dark:bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/faculty">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Report Cards</h1>
-                <p className="text-sm text-muted-foreground">Generate and distribute student reports directly via Google Sheets</p>
-              </div>
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/faculty"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
+            <div>
+              <h1 className="text-xl font-semibold">Report Cards</h1>
+              <p className="text-sm text-muted-foreground">Manage and distribute</p>
             </div>
-          <ModeToggle />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => window.print()} title="Print this page"><Printer className="h-4 w-4" /></Button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Action Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Database Info</CardTitle>
-            </CardHeader>
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
+          <Card className="border">
+            <CardHeader><CardTitle className="text-base">Info</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Exam Type:</span>
-                  <span className="font-semibold">{examTypeInfo}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Students:</span>
-                  <span className="font-semibold">{reportData.length}</span>
-                </div>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Exam:</span><span className="font-medium">{examTypeInfo}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Students:</span><span className="font-medium">{reportData.length}</span></div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer opacity-70" onClick={handleDownloadAll}>
+          <Card className="border">
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <Download className="h-5 w-5 text-blue-600" />
-                </div>
-                <CardTitle className="text-lg">Download All</CardTitle>
-              </div>
+              <div className="flex items-center gap-2"><Download className="h-4 w-4 text-primary" /><CardTitle className="text-base">Download All</CardTitle></div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                Download all visual report cards (Coming Soon)
-              </p>
-              <Button className="w-full" variant="outline" disabled>
-                <Download className="mr-2 h-4 w-4" />
-                Download All PDFs
+              <p className="text-sm text-muted-foreground mb-2">PDFs as ZIP</p>
+              <Button className="w-full" variant="outline" disabled={downloadingAll} onClick={downloadAllPDFs}>
+                {downloadingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                {downloadingAll ? `${downloadProgress}%` : "Download"}
               </Button>
             </CardContent>
           </Card>
 
-          <Card className={`hover:shadow-lg transition-shadow ${sendingEmail ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} onClick={!sendingEmail ? handleEmailAll : undefined}>
+          <Card className="border">
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <Mail className="h-5 w-5 text-green-600" />
-                </div>
-                <CardTitle className="text-lg">Email All</CardTitle>
-              </div>
+              <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary" /><CardTitle className="text-base">Email All</CardTitle></div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-3">
-                Send report cards to all students via automated GAS emails
-              </p>
-              <Button className="w-full" variant="outline" disabled={sendingEmail}>
+              <p className="text-sm text-muted-foreground mb-2">Send reports via email</p>
+              <Button className="w-full" variant="outline" disabled={sendingEmail} onClick={() => executeSendEmails()}>
                 {sendingEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                {sendingEmail ? "Sending Setup..." : "Send All Emails"}
+                {sendingEmail ? "Sending..." : "Send All"}
               </Button>
             </CardContent>
           </Card>
         </div>
 
-        {/* Search and Filter */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
+        {sendingEmail && (
+          <Card className="border mb-5">
+            <CardContent className="pt-5">
+              <div className="flex items-center gap-3 mb-2">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <p className="text-sm font-medium">Sending emails... {emailProgress}%</p>
+              </div>
+              <Progress value={emailProgress} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-2">Processing {reportData.length} students. Please don't close this page.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="border mb-5">
+          <CardContent className="pt-5">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by student name or roll number..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search by name or roll number..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
           </CardContent>
         </Card>
 
-        {/* Report Cards Table */}
-        <Card>
+        <Card className="border">
           <CardHeader>
-            <CardTitle>Student Report Cards</CardTitle>
-            <CardDescription>Individual report tracking and distribution</CardDescription>
+            <CardTitle className="text-base">Student Reports</CardTitle>
+            <CardDescription>{filteredData.length} students</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">Rank</TableHead>
-                  <TableHead>Roll No.</TableHead>
-                  <TableHead>Student Name</TableHead>
+                  <TableHead className="w-14">Rank</TableHead>
+                  <TableHead>Roll</TableHead>
+                  <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead className="text-right">Marks</TableHead>
                   <TableHead className="text-right">%</TableHead>
@@ -346,60 +348,34 @@ export function ReportCards() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((data) => {
-                  return (
-                    <TableRow key={data.rollNumber}>
-                      <TableCell className="font-bold">
-                        {data.rank === 1 && <span className="text-yellow-600">🥇</span>}
-                        {data.rank === 2 && <span className="text-gray-400">🥈</span>}
-                        {data.rank === 3 && <span className="text-orange-600">🥉</span>}
-                        {data.rank > 3 && <span>#{data.rank}</span>}
-                      </TableCell>
-                      <TableCell>{data.rollNumber}</TableCell>
-                      <TableCell className="font-medium">{data.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{data.email}</TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-semibold">{data.totalObtained}</span>
-                        <span className="text-muted-foreground">/{data.totalMax}</span>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">{data.percentage}%</TableCell>
-                      <TableCell className="text-center">
-                        <Badge>{data.grade}</Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={data.passStatus === 'PASS' ? 'default' : 'destructive'}>
-                          {data.passStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            title="Coming Soon - Feature in Development."
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDownloadReport(data.name)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            title={`Send email directly to ${data.email}`}
-                            size="sm"
-                            variant="ghost"
-                            disabled={sendingEmail}
-                            onClick={() => handleEmailReport(data.rollNumber, data.name)}
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {filteredData.map((d) => (
+                  <TableRow key={d.rollNumber}>
+                    <TableCell className="font-semibold">
+                      {d.rank === 1 && "🥇"}{d.rank === 2 && "🥈"}{d.rank === 3 && "🥉"}{d.rank > 3 && `#${d.rank}`}
+                    </TableCell>
+                    <TableCell>{d.rollNumber}</TableCell>
+                    <TableCell className="font-medium">{d.name}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{d.email}</TableCell>
+                    <TableCell className="text-right"><span className="font-medium">{d.totalObtained}</span><span className="text-muted-foreground">/{d.totalMax}</span></TableCell>
+                    <TableCell className="text-right font-medium">{d.percentage}%</TableCell>
+                    <TableCell className="text-center"><Badge variant="outline">{d.grade}</Badge></TableCell>
+                    <TableCell className="text-center"><Badge variant={d.passStatus === 'PASS' ? 'default' : 'destructive'}>{d.passStatus}</Badge></TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 justify-end">
+                        <Button size="sm" variant="ghost" disabled={downloading === d.rollNumber} onClick={() => downloadPDF(d.rollNumber, d.name)}>
+                          {downloading === d.rollNumber ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                        </Button>
+                        <Button size="sm" variant="ghost" disabled={sendingEmail} onClick={() => executeSendEmails(d.rollNumber)}><Mail className="h-4 w-4" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }

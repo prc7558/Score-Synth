@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { Home } from "./pages/Home";
 import { FacultyDashboard } from "./pages/FacultyDashboard";
 import { StudentDashboard } from "./pages/StudentDashboard";
@@ -7,6 +8,7 @@ import { Analytics } from "./pages/Analytics";
 import { ReportCards } from "./pages/ReportCards";
 import { SGPAPredictor } from "./pages/SGPAPredictor";
 import { Grievances } from "./pages/Grievances";
+import { FacultyGrievances } from "./pages/FacultyGrievances";
 import { AcademicCalendar } from "./pages/AcademicCalendar";
 import { NotFound } from "./pages/NotFound";
 import { StudentAnalytics } from "./pages/StudentAnalytics";
@@ -14,51 +16,21 @@ import { StudentReports } from "./pages/StudentReports";
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    Component: Home,
-  },
-  {
-    path: "/faculty",
-    Component: FacultyDashboard,
-  },
-  {
-    path: "/student",
-    Component: StudentDashboard,
-  },
-  {
-    path: "/upload-marks",
-    Component: UploadMarks,
-  },
-  {
-    path: "/analytics",
-    Component: Analytics,
-  },
-  {
-    path: "/reports",
-    Component: ReportCards,
-  },
-  {
-    path: "/student-analytics",
-    Component: StudentAnalytics,
-  },
-  {
-    path: "/student-reports",
-    Component: StudentReports,
-  },
-  {
-    path: "/sgpa-predictor",
-    Component: SGPAPredictor,
-  },
-  {
-    path: "/grievances",
-    Component: Grievances,
-  },
-  {
-    path: "/calendar",
-    Component: AcademicCalendar,
-  },
-  {
-    path: "*",
-    Component: NotFound,
+    Component: ScrollToTop,
+    children: [
+      { path: "/", Component: Home },
+      { path: "/faculty", Component: FacultyDashboard },
+      { path: "/student", Component: StudentDashboard },
+      { path: "/upload-marks", Component: UploadMarks },
+      { path: "/analytics", Component: Analytics },
+      { path: "/reports", Component: ReportCards },
+      { path: "/student-analytics", Component: StudentAnalytics },
+      { path: "/student-reports", Component: StudentReports },
+      { path: "/sgpa-predictor", Component: SGPAPredictor },
+      { path: "/grievances", Component: Grievances },
+      { path: "/calendar", Component: AcademicCalendar },
+      { path: "/faculty-grievances", Component: FacultyGrievances },
+      { path: "*", Component: NotFound },
+    ],
   },
 ]);
